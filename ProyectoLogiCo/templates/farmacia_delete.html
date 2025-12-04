@@ -3,94 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <title>Eliminar Farmacia</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
     <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
             min-height: 100vh;
-            padding: 40px 20px;
-            color: white;
-            text-align: center;
-        }
-        h1 {
-            font-size: 2.8em;
-            margin-bottom: 25px;
-            text-shadow: 2px 2px 6px rgba(0,0,0,0.4);
-        }
-        p {
-            font-size: 1.3em;
-            margin-bottom: 40px;
-            text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
-        }
-        form button {
-            background: white;
-            color: #ff5252;
-            border: none;
-            border-radius: 12px;
-            padding: 15px 40px;
-            font-size: 1.2em;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 6px 25px rgba(255,82,82,0.4);
-            transition: background 0.3s;
-            margin-right: 20px;
-        }
-        form button:hover {
-            background: #ff3a3a;
-            color: white;
-        }
-        a.cancel-link {
-            background: white;
-            color: #764ba2;
-            padding: 12px 30px;
-            font-weight: 600;
-            border-radius: 25px;
-            text-decoration: none;
-            box-shadow: 0 4px 18px rgba(118,75,162,0.35);
-            transition: background 0.3s;
-        }
-        a.cancel-link:hover {
-            background: #764ba2;
-            color: white;
-        }
-        .button-group {
-            display: inline-flex;
+            display: flex;
+            align-items: center;
             justify-content: center;
-            gap: 10px;
+            padding: 20px;
+            color: #fff;
         }
-         .main-btn {
-    background: linear-gradient(135deg, #ffffff 0%, #764ba2 100%);
-    color: rgb(255, 255, 255);
-    padding: 12px 32px;
-    border: none;
-    border-radius: 25px;
-    font-weight: 700;
-    font-size: 1.08em;
-    cursor: pointer;
-    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.13);
-    transition: background 0.2s, color 0.2s, transform 0.18s;
-    text-decoration: none;
-    display: inline-block;
-    margin-top: 10px;
-}
-.main-btn:hover, .main-btn:focus {
-    background: #ffffff;
-    color: #fffbe6;
-    transform: translateY(-2px) scale(1.04);
-    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.22);
-}
+
+        .delete-container {
+            width: 100%;
+            max-width: 500px;
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(14px);
+            border-radius: 22px;
+            padding: 50px 40px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .icon-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .delete-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #fee2e2;
+        }
+
+        p {
+            font-size: 1em;
+            color: #cbd5e1;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        strong {
+            color: #e2e8f0;
+            font-weight: 600;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 35px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        form {
+            display: contents;
+        }
+
+        button[type="submit"],
+        .cancel-link {
+            padding: 12px 28px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: 0.3s;
+            border: none;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        button[type="submit"] {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4);
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.15);
+        }
+
+        .cancel-link {
+            background: linear-gradient(135deg, #0f13ec, #087ed3);
+            color: white;
+            box-shadow: 0 8px 25px rgba(15, 19, 236, 0.3);
+        }
+
+        .cancel-link:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.15);
+        }
+
+        .warning-box {
+            background: rgba(254, 226, 226, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .warning-box p {
+            color: #fecaca;
+            margin: 0;
+        }
+
+        @media (max-width: 480px) {
+            .delete-container {
+                padding: 35px 25px;
+            }
+
+            h1 {
+                font-size: 1.6em;
+            }
+
+            .delete-icon {
+                font-size: 3em;
+            }
+
+            .button-group {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            button[type="submit"],
+            .cancel-link {
+                width: 100%;
+                text-align: center;
+            }
+        }
     </style>
 </head>
 <body>
-    <h1>¿Eliminar Farmacia?</h1>
-    <p>¿Estás seguro de que deseas eliminar la farmacia <strong>{{ farmacia.nombre }}</strong>?</p>
-    <form method="POST">
-        {% csrf_token %}
-        <div class="button-group">
-            <button type="submit">Eliminar</button>
-            <a href="{% url 'farmacia_list' %}" class="cancel-link">Cancelar</a>
+
+    <div class="delete-container">
+        
+        <div class="icon-section">
+            <div class="delete-icon">⚠️</div>
+            <h1>Confirmar Eliminación</h1>
         </div>
-    </form>
+
+        <div class="warning-box">
+            <p>¿Estás seguro de que deseas eliminar esta farmacia?</p>
+        </div>
+
+        <p>
+            Se eliminará permanentemente la farmacia 
+            <strong>{{ farmacia.nombre }}</strong>.
+        </p>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="button-group">
+                <button type="submit">🗑️ Eliminar</button>
+                <a href="{% url 'farmacia_list' %}" class="cancel-link">↩️ Cancelar</a>
+            </div>
+        </form>
+
+    </div>
+
 </body>
 </html>
-

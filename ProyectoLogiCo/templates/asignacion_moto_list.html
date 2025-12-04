@@ -3,178 +3,350 @@
 <head>
     <meta charset="UTF-8">
     <title>Listado de Asignaciones de Motos</title>
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
     <style>
-        /* === ESTILOS PRINCIPALES === */
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
             min-height: 100vh;
             padding: 40px 20px;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
         }
 
         h1 {
-            color: white;
-            text-align: center;
             font-size: 2.5em;
-            margin-bottom: 30px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: 700;
+            margin-bottom: 25px;
         }
 
-        a {
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 35px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
             display: inline-block;
-            background: white;
-            color: #667eea;
-            padding: 12px 30px;
+            padding: 12px 28px;
             text-decoration: none;
-            border-radius: 25px;
+            border-radius: 10px;
             font-weight: 600;
-            margin-bottom: 30px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
+            font-size: 0.95em;
+            transition: 0.3s;
+            border: none;
+            cursor: pointer;
         }
 
-        a:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-            background: #764ba2;
+        .btn-primary {
+            background: linear-gradient(135deg, #0f13ec, #087ed3);
             color: white;
+            box-shadow: 0 8px 25px rgba(15, 19, 236, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.15);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #cbd5e1;
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.15);
+            color: #e2e8f0;
+            transform: translateY(-3px);
         }
 
         /* === BUSCADOR === */
+        .search-section {
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(14px);
+            border-radius: 22px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+
         .search-box {
-            max-width: 1200px;
-            margin: 0 auto 20px auto;
             display: flex;
-            gap: 10px;
+            gap: 12px;
+            flex-wrap: wrap;
         }
 
         .search-box input,
         .search-box select {
-            padding: 12px;
-            border-radius: 8px;
+            padding: 12px 15px;
+            border-radius: 10px;
             border: none;
+            font-size: 0.95em;
+            background: rgba(255,255,255,0.95);
+            color: #000;
+            font-family: 'Inter', sans-serif;
+            transition: 0.3s;
             flex: 1;
-            font-size: 1em;
+            min-width: 200px;
         }
 
         .search-box select {
-            flex: 0.4;
+            flex: 0 1 auto;
+            min-width: 150px;
+            cursor: pointer;
+        }
+
+        .search-box input:focus,
+        .search-box select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(15, 19, 236, 0.2);
+        }
+
+        /* === TABLA === */
+        .table-wrapper {
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(14px);
+            border-radius: 22px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.12);
+            overflow-x: auto;
         }
 
         table {
             width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
             border-collapse: collapse;
         }
 
         th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: rgba(15, 19, 236, 0.2);
+            color: #e2e8f0;
             padding: 15px;
             text-align: left;
-            font-size: 1.1em;
+            font-size: 0.95em;
+            font-weight: 600;
+            border-bottom: 2px solid rgba(15, 19, 236, 0.3);
         }
 
         td {
             padding: 12px 15px;
-            border-bottom: 1px solid #f0f0f0;
-            color: #555;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            color: #cbd5e1;
+            font-size: 0.95em;
         }
 
-        tr:hover { background-color: #f8f8ff; }
+        tr:hover {
+            background-color: rgba(15, 19, 236, 0.1);
+        }
 
         .estado-activo {
-            color: green;
-            font-weight: bold;
+            color: #4ade80;
+            font-weight: 600;
+            background: rgba(74, 222, 128, 0.15);
+            padding: 4px 12px;
+            border-radius: 6px;
+            display: inline-block;
         }
 
         .estado-inactivo {
-            color: red;
-            font-weight: bold;
+            color: #f87171;
+            font-weight: 600;
+            background: rgba(248, 113, 113, 0.15);
+            padding: 4px 12px;
+            border-radius: 6px;
+            display: inline-block;
         }
 
-        td a {
-            padding: 8px 20px;
-            margin: 0 5px;
-            font-size: 0.9em;
-            border-radius: 20px;
+        .action-links {
+            display: flex;
+            gap: 8px;
         }
 
-        td a:first-child { background: #667eea; color: white; }
-        td a:first-child:hover { background: #5568d3; }
+        .action-links a {
+            padding: 6px 14px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: 0.3s;
+            display: inline-block;
+            margin: 0;
+            box-shadow: none;
+        }
 
-        td a:last-child { background: #ff6b6b; color: white; }
-        td a:last-child:hover { background: #ff5252; }
+        .edit-btn {
+            background: linear-gradient(135deg, #0f13ec, #087ed3);
+            color: white;
+        }
+
+        .edit-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.15);
+        }
+
+        .delete-btn {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        .delete-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.15);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #cbd5e1;
+        }
+
+        .empty-state-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .search-box {
+                flex-direction: column;
+            }
+
+            .search-box input,
+            .search-box select {
+                min-width: auto;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .action-links {
+                flex-direction: column;
+            }
+
+            table {
+                font-size: 0.85em;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+        }
     </style>
 </head>
 
 <body>
 
-    <h1>Asignaciones de Motos</h1>
+    <div class="container">
 
-    <div style="text-align:center;">
-        <a href="{% url 'asignacion_moto_create' %}">Nueva Asignación</a>
-        <a href="{% url 'index' %}">Volver al Inicio</a>
+        <div class="header-section">
+            <div class="header-icon">🏍️</div>
+            <h1>Asignaciones de Motos</h1>
+        </div>
+
+        <div class="action-buttons">
+            <a href="{% url 'asignacion_moto_create' %}" class="btn btn-primary">➕ Nueva Asignación</a>
+            <a href="{% url 'index' %}" class="btn btn-secondary">↩️ Volver al Inicio</a>
+        </div>
+
+        <!-- === BARRA DE BÚSQUEDA === -->
+        <div class="search-section">
+            <div class="search-box">
+                <input 
+                    type="text" 
+                    id="buscar" 
+                    placeholder="🔍 Busca motorista, moto o fecha..."
+                    autocomplete="off"
+                >
+                <select id="columna">
+                    <option value="0">Motorista</option>
+                    <option value="1">Patente Moto</option>
+                    <option value="2">Fecha Asignación</option>
+                    <option value="3">Fecha Fin</option>
+                    <option value="4">Estado</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- === TABLA === -->
+        <div class="table-wrapper">
+            <table id="tabla">
+                <thead>
+                    <tr>
+                        <th>Motorista</th>
+                        <th>Moto</th>
+                        <th>Fecha Asignación</th>
+                        <th>Fecha Fin</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for asignacion in asignaciones %}
+                    <tr>
+                        <td>{{ asignacion.motorista.nombre }}</td>
+                        <td>{{ asignacion.moto.patente }}</td>
+                        <td>{{ asignacion.fecha_asignacion|date:"d/m/Y" }}</td>
+                        <td>{{ asignacion.fecha_fin|date:"d/m/Y"|default:"-" }}</td>
+                        <td>
+                            {% if asignacion.activa %}
+                                <span class="estado-activo">✓ Activa</span>
+                            {% else %}
+                                <span class="estado-inactivo">✗ Finalizada</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-links">
+                                <a href="{% url 'asignacion_moto_update' asignacion.id %}" class="edit-btn">✏️ Editar</a>
+                                <a href="{% url 'asignacion_moto_delete' asignacion.id %}" class="delete-btn">🗑️ Eliminar</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-state-icon">📭</div>
+                                <p>No hay asignaciones registradas</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
     </div>
-
-    <!-- === BARRA DE BÚSQUEDA === -->
-    <div class="search-box">
-        <input type="text" id="buscar" placeholder="Escribe para filtrar...">
-
-        <select id="columna">
-            <option value="0">Motorista</option>
-            <option value="1">Patente Moto</option>
-            <option value="2">Fecha Asignación</option>
-            <option value="3">Fecha Fin</option>
-            <option value="4">Estado</option>
-        </select>
-    </div>
-
-    <table id="tabla">
-        <thead>
-            <tr>
-                <th>Motorista</th>
-                <th>Moto</th>
-                <th>Fecha Asignación</th>
-                <th>Fecha Fin</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-
-        <tbody>
-            {% for asignacion in asignaciones %}
-            <tr>
-                <td>{{ asignacion.motorista.nombre }}</td>
-                <td>{{ asignacion.moto.patente }}</td>
-                <td>{{ asignacion.fecha_asignacion|date:"d/m/Y" }}</td>
-                <td>{{ asignacion.fecha_fin|date:"d/m/Y"|default:"-" }}</td>
-                <td>
-                    {% if asignacion.activa %}
-                        <span class="estado-activo">Activa</span>
-                    {% else %}
-                        <span class="estado-inactivo">Finalizada</span>
-                    {% endif %}
-                </td>
-                <td>
-                    <a href="{% url 'asignacion_moto_update' asignacion.id %}">Editar</a>
-                    <a href="{% url 'asignacion_moto_delete' asignacion.id %}">Eliminar</a>
-                </td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6" style="text-align:center;">No hay asignaciones registradas.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
 
     <!-- === SCRIPT DE FILTRADO === -->
     <script>
