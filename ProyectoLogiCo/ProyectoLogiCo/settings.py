@@ -26,7 +26,8 @@ SECRET_KEY = 'django-insecure-w_o1d4rhj7ok9df30w$*=j8m9h3mnw2+2kmwc9su!#%u_ibem^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['proyecto-integradoev3.onrender.com']
+ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+
 
 CSRF_TRUSTED_ORIGINS = [
     'https://proyecto-integradoev3.onrender.com',
@@ -80,12 +81,12 @@ WSGI_APPLICATION = 'ProyectoLogiCo.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST'),
-        'PORT': os.environ.get('DB_PORT'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': "proyectointegrado",
+        'USER': "root",
+        'PASSWORD': "123",
+        'HOST': "localhost",
+       
     }
 }
 
