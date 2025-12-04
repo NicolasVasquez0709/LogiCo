@@ -1,24 +1,203 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse, HttpResponse
+from datetime import timedelta
+
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
-from django.http import JsonResponse, HttpResponse
-from .models import Farmacia, Moto, Motorista, Movimiento, AsignacionMoto, AsignacionFarmacia, ReporteMovimiento
+
+from .models import (
+    Farmacia, Moto, Motorista, Movimiento, 
+    AsignacionMoto, AsignacionFarmacia, ReporteMovimiento
+)
 from .forms import (
-    FarmaciaForm,
-    MotoForm,
-    MotoristaForm,
-    MovimientoForm,
-    AsignacionMotoForm,
-    AsignacionFarmaciaForm
+    FarmaciaForm, MotoForm, MotoristaForm, 
+    MovimientoForm, AsignacionMotoForm, AsignacionFarmaciaForm
 )
 
 
 # =====================================================
-# PÁGINA PRINCIPAL
+# AUTENTICACIÓN
 # =====================================================
+
+def paginaPrincipal(request):
+    """Página principal sin autenticación"""
+    if request.user.is_authenticated:
+        return redirect('index')
+    return render(request, 'paginaPrincipal.html')
+
+
+@require_http_methods(["GET", "POST"])
+def login_view(request):
+    """Login con validación de credenciales"""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        remember = request.POST.get('remember')
+        
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            login(request, user)
+            
+            # Configurar duración de sesión
+            if remember:
+                request.session.set_expiry(timedelta(days=7))
+            else:
+                request.session.set_expiry(timedelta(minutes=30))
+            
+            messages.success(request, f'¡Bienvenido {username}!')
+            return redirect('index')
+        else:
+            messages.error(request, 'Usuario o contraseña incorrectos.')
+    
+    return render(request, 'login.html')
+
+
+@login_required(login_url='login')
+def logout_view(request):
+    """Cerrar sesión"""
+    username = request.user.username
+    logout(request)
+    messages.success(request, f'Sesión cerrada correctamente.')
+    return redirect('pagina_principal')
+
+
+@login_required(login_url='login')
+@require_http_methods(["GET", "POST"])
+def cambiar_password(request):
+    """Cambiar contraseña del usuario actual"""
+    if request.method == 'POST':
+        old_password = request.POST.get('old_password')
+        new_password1 = request.POST.get('new_password1')
+        new_password2 = request.POST.get('new_password2')
+        
+        user = request.user
+        
+        if not user.check_password(old_password):
+            messages.error(request, 'La contraseña actual es incorrecta.')
+            return redirect('index')
+        
+        if new_password1 != new_password2:
+            messages.error(request, 'Las nuevas contraseñas no coinciden.')
+            return redirect('index')
+        
+        if len(new_password1) < 8:
+            messages.error(request, 'La contraseña debe tener al menos 8 caracteres.')
+            return redirect('index')
+        
+        user.set_password(new_password1)
+        user.save()
+        login(request, user)
+        messages.success(request, '✅ Contraseña actualizada correctamente.')
+        return redirect('index')
+    
+    return render(request, 'cambiar_password.html')
+
+
+@require_http_methods(["GET", "POST"])
+def recuperar_password(request):
+    """Enviar email para recuperar contraseña"""
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        
+        from django.contrib.auth.models import User
+        try:
+            user = User.objects.get(email=email)
+            
+            from django.contrib.auth.tokens import default_token_generator
+            token = default_token_generator.make_token(user)
+            
+            reset_link = f"{request.build_absolute_uri('/auth/reset-password/')}{user.pk}/{token}/"
+            
+            from django.core.mail import send_mail
+            subject = '🔐 Recuperar contraseña - LogiCo'
+            message = f"""
+Hola {user.username},
+
+Recibimos una solicitud para recuperar tu contraseña en LogiCo.
+
+Haz clic en el siguiente enlace para establecer una nueva contraseña:
+{reset_link}
+
+Este enlace expira en 24 horas.
+
+Si no solicitaste esto, ignora este email.
+
+Saludos,
+Equipo LogiCo
+            """
+            
+            send_mail(
+                subject,
+                message,
+                'noreply@logico.com',
+                [email],
+                fail_silently=False,
+            )
+            
+            messages.success(request, '📧 Se envió un enlace de recuperación a tu email.')
+        
+        except User.DoesNotExist:
+            messages.info(request, '📧 Si el email existe, recibirás un enlace de recuperación.')
+        
+        return redirect('pagina_principal')
+    
+    return render(request, 'recuperar_password.html')
+
+
+@require_http_methods(["GET", "POST"])
+def reset_password_confirm(request, uidb64, token):
+    """Confirmar y cambiar contraseña desde enlace de email"""
+    from django.contrib.auth.tokens import default_token_generator
+    from django.contrib.auth.models import User
+    from django.utils.http import urlsafe_base64_decode
+    
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = User.objects.get(pk=uid)
+    except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+        messages.error(request, '❌ El enlace de recuperación es inválido o ha expirado.')
+        return redirect('pagina_principal')
+    
+    if not default_token_generator.check_token(user, token):
+        messages.error(request, '❌ El enlace de recuperación ha expirado.')
+        return redirect('pagina_principal')
+    
+    if request.method == 'POST':
+        new_password1 = request.POST.get('new_password1')
+        new_password2 = request.POST.get('new_password2')
+        
+        if new_password1 != new_password2:
+            messages.error(request, 'Las contraseñas no coinciden.')
+            return redirect(request.path)
+        
+        if len(new_password1) < 8:
+            messages.error(request, 'La contraseña debe tener al menos 8 caracteres.')
+            return redirect(request.path)
+        
+        user.set_password(new_password1)
+        user.save()
+        messages.success(request, '✅ Contraseña actualizada. Ya puedes iniciar sesión.')
+        return redirect('login')
+    
+    return render(request, 'reset_password_confirm.html', {'user': user})
+
+
+@login_required(login_url='login')
 def index(request):
+    """Dashboard principal - solo usuarios autenticados"""
     return render(request, 'index.html')
 
+
+# =====================================================
+# MENÚ Y REPORTES
+# =====================================================
+
+@login_required(login_url='login')
 def reportes_menu(request):
     return render(request, 'reportes_menu.html')
 
@@ -26,10 +205,14 @@ def reportes_menu(request):
 # =====================================================
 # CRUD FARMACIA
 # =====================================================
+
+@login_required(login_url='login')
 def farmacia_list(request):
     farmacias = Farmacia.objects.all()
     return render(request, 'farmacia_list.html', {'farmacias': farmacias})
 
+
+@login_required(login_url='login')
 def farmacia_create(request):
     if request.method == 'POST':
         form = FarmaciaForm(request.POST)
@@ -40,6 +223,8 @@ def farmacia_create(request):
         form = FarmaciaForm()
     return render(request, 'farmacia_form.html', {'form': form})
 
+
+@login_required(login_url='login')
 def farmacia_update(request, pk):
     farmacia = get_object_or_404(Farmacia, pk=pk)
     if request.method == 'POST':
@@ -51,6 +236,8 @@ def farmacia_update(request, pk):
         form = FarmaciaForm(instance=farmacia)
     return render(request, 'farmacia_form.html', {'form': form})
 
+
+@login_required(login_url='login')
 def farmacia_delete(request, pk):
     farmacia = get_object_or_404(Farmacia, pk=pk)
     if request.method == 'POST':
@@ -59,11 +246,17 @@ def farmacia_delete(request, pk):
     return render(request, 'farmacia_delete.html', {'farmacia': farmacia})
 
 
+# =====================================================
+# CRUD MOTO
+# =====================================================
 
+@login_required(login_url='login')
 def moto_list(request):
     motos = Moto.objects.all()
     return render(request, 'moto_list.html', {'motos': motos})
 
+
+@login_required(login_url='login')
 def moto_create(request):
     if request.method == 'POST':
         form = MotoForm(request.POST)
@@ -74,6 +267,8 @@ def moto_create(request):
         form = MotoForm()
     return render(request, 'moto_form.html', {'form': form})
 
+
+@login_required(login_url='login')
 def moto_update(request, pk):
     moto = get_object_or_404(Moto, pk=pk)
     if request.method == 'POST':
@@ -85,6 +280,8 @@ def moto_update(request, pk):
         form = MotoForm(instance=moto)
     return render(request, 'moto_form.html', {'form': form})
 
+
+@login_required(login_url='login')
 def moto_delete(request, pk):
     moto = get_object_or_404(Moto, pk=pk)
     if request.method == 'POST':
@@ -96,10 +293,14 @@ def moto_delete(request, pk):
 # =====================================================
 # CRUD MOTORISTA
 # =====================================================
+
+@login_required(login_url='login')
 def motorista_list(request):
     motoristas = Motorista.objects.all()
     return render(request, 'motorista_list.html', {'motoristas': motoristas})
 
+
+@login_required(login_url='login')
 def motorista_create(request):
     if request.method == 'POST':
         form = MotoristaForm(request.POST)
@@ -110,6 +311,8 @@ def motorista_create(request):
         form = MotoristaForm()
     return render(request, 'motorista_form.html', {'form': form})
 
+
+@login_required(login_url='login')
 def motorista_update(request, pk):
     motorista = get_object_or_404(Motorista, pk=pk)
     if request.method == 'POST':
@@ -121,6 +324,8 @@ def motorista_update(request, pk):
         form = MotoristaForm(instance=motorista)
     return render(request, 'motorista_form.html', {'form': form})
 
+
+@login_required(login_url='login')
 def motorista_delete(request, pk):
     motorista = get_object_or_404(Motorista, pk=pk)
     if request.method == 'POST':
@@ -132,10 +337,14 @@ def motorista_delete(request, pk):
 # =====================================================
 # CRUD ASIGNACIÓN MOTO
 # =====================================================
+
+@login_required(login_url='login')
 def asignacion_moto_list(request):
     asignaciones = AsignacionMoto.objects.all()
     return render(request, 'asignacion_moto_list.html', {'asignaciones': asignaciones})
 
+
+@login_required(login_url='login')
 def asignacion_moto_create(request):
     if request.method == 'POST':
         form = AsignacionMotoForm(request.POST)
@@ -146,6 +355,8 @@ def asignacion_moto_create(request):
         form = AsignacionMotoForm()
     return render(request, 'asignacion_moto_form.html', {'form': form})
 
+
+@login_required(login_url='login')
 def asignacion_moto_update(request, pk):
     asignacion = get_object_or_404(AsignacionMoto, pk=pk)
     if request.method == 'POST':
@@ -157,6 +368,8 @@ def asignacion_moto_update(request, pk):
         form = AsignacionMotoForm(instance=asignacion)
     return render(request, 'asignacion_moto_form.html', {'form': form})
 
+
+@login_required(login_url='login')
 def asignacion_moto_delete(request, pk):
     asignacion = get_object_or_404(AsignacionMoto, pk=pk)
     if request.method == 'POST':
@@ -168,10 +381,14 @@ def asignacion_moto_delete(request, pk):
 # =====================================================
 # CRUD ASIGNACIÓN FARMACIA
 # =====================================================
+
+@login_required(login_url='login')
 def asignacion_farmacia_list(request):
     asignaciones = AsignacionFarmacia.objects.all()
     return render(request, 'asignacion_farmacia_list.html', {'asignaciones': asignaciones})
 
+
+@login_required(login_url='login')
 def asignacion_farmacia_create(request):
     if request.method == 'POST':
         form = AsignacionFarmaciaForm(request.POST)
@@ -182,6 +399,8 @@ def asignacion_farmacia_create(request):
         form = AsignacionFarmaciaForm()
     return render(request, 'asignacion_farmacia_form.html', {'form': form})
 
+
+@login_required(login_url='login')
 def asignacion_farmacia_update(request, pk):
     asignacion = get_object_or_404(AsignacionFarmacia, pk=pk)
     if request.method == 'POST':
@@ -193,6 +412,8 @@ def asignacion_farmacia_update(request, pk):
         form = AsignacionFarmaciaForm(instance=asignacion)
     return render(request, 'asignacion_farmacia_form.html', {'form': form})
 
+
+@login_required(login_url='login')
 def asignacion_farmacia_delete(request, pk):
     asignacion = get_object_or_404(AsignacionFarmacia, pk=pk)
     if request.method == 'POST':
@@ -204,10 +425,14 @@ def asignacion_farmacia_delete(request, pk):
 # =====================================================
 # CRUD MOVIMIENTO
 # =====================================================
+
+@login_required(login_url='login')
 def movimiento_list(request):
     movimientos = Movimiento.objects.all()
     return render(request, 'movimiento_list.html', {'movimientos': movimientos})
 
+
+@login_required(login_url='login')
 def movimiento_create(request):
     if request.method == 'POST':
         form = MovimientoForm(request.POST)
@@ -218,6 +443,8 @@ def movimiento_create(request):
         form = MovimientoForm()
     return render(request, 'movimiento_form.html', {'form': form})
 
+
+@login_required(login_url='login')
 def movimiento_update(request, pk):
     movimiento = get_object_or_404(Movimiento, pk=pk)
     if request.method == 'POST':
@@ -229,6 +456,8 @@ def movimiento_update(request, pk):
         form = MovimientoForm(instance=movimiento)
     return render(request, 'movimiento_form.html', {'form': form})
 
+
+@login_required(login_url='login')
 def movimiento_delete(request, pk):
     movimiento = get_object_or_404(Movimiento, pk=pk)
     if request.method == 'POST':
@@ -236,120 +465,34 @@ def movimiento_delete(request, pk):
         return redirect('movimiento_list')
     return render(request, 'movimiento_delete.html', {'movimiento': movimiento})
 
+
+# =====================================================
+# COMBOS DINÁMICOS
+# =====================================================
+
 def cargar_provincias(request):
     region = request.GET.get('region')
     provincias_por_region = {
-        "Arica y Parinacota": ["Arica", "Parinacota"],
-        "Tarapacá": ["Iquique", "Tamarugal"],
-        "Antofagasta": ["Antofagasta", "El Loa", "Tocopilla"],
-        "Atacama": ["Copiapó", "Chañaral", "Huasco"],
-        "Coquimbo": ["Elqui", "Choapa", "Limarí"],
-        "Valparaíso": ["Valparaíso", "Quillota", "San Antonio", "Petorca", "Marga Marga", "Los Andes", "San Felipe de Aconcagua", "Isla de Pascua"],
         "Metropolitana de Santiago": ["Santiago", "Cordillera", "Chacabuco", "Maipo", "Melipilla", "Talagante"],
-        "Libertador General Bernardo O'Higgins": ["Cachapoal", "Colchagua", "Cardenal Caro"],
-        "Maule": ["Talca", "Curicó", "Linares", "Cauquenes"],
-        "Ñuble": ["Diguillín", "Itata", "Punilla"],
-        "Biobío": ["Concepción", "Biobío", "Arauco"],
-        "La Araucanía": ["Cautín", "Malleco"],
-        "Los Ríos": ["Valdivia", "Ranco"],
-        "Los Lagos": ["Llanquihue", "Osorno", "Chiloé", "Palena"],
-        "Aysén del General Carlos Ibáñez del Campo": ["Coyhaique", "Aysén", "General Carrera", "Capitán Prat"],
-        "Magallanes y la Antártica Chilena": ["Magallanes", "Última Esperanza", "Tierra del Fuego", "Antártica Chilena"],
     }
-
     provincias = provincias_por_region.get(region, [])
     return JsonResponse({'provincias': provincias})
 
 
 def cargar_comunas(request):
     provincia = request.GET.get('provincia')
-
     comunas_por_provincia = {
-        # ==== Región Metropolitana ====
-        "Santiago": ["Santiago","Cerrillos","Cerro Navia","Conchalí","El Bosque","Estación Central","Huechuraba","Independencia","La Cisterna","La Florida","La Granja","La Pintana","La Reina","Las Condes","Lo Barnechea","Lo Espejo","Lo Prado","Macul","Maipú","Ñuñoa","Pedro Aguirre Cerda","Peñalolén","Providencia","Pudahuel","Quilicura","Quinta Normal","Recoleta","Renca","San Joaquín","San Miguel","San Ramón","Vitacura"],
-        "Chacabuco": ["Colina","Lampa","Tiltil"],
-        "Cordillera": ["Pirque","Puente Alto","San José de Maipo"],
-        "Maipo": ["Buín","Calera de Tango","Paine","San Bernardo"],
-        "Melipilla": ["Alhué","Curacaví","María Pinto","Melipilla","San Pedro"],
-        "Talagante": ["El Monte","Isla de Maipo","Padre Hurtado","Peñaflor","Talagante"],
-
-        # ==== Valparaíso ====
-        "Valparaíso": ["Valparaíso","Viña del Mar","Concón","Puchuncaví","Quintero","Casablanca","Juan Fernández"],
-        "San Antonio": ["San Antonio","Algarrobo","Cartagena","El Quisco","El Tabo","Santo Domingo"],
-        "Marga Marga": ["Quilpué","Villa Alemana","Limache","Olmué"],
-        "Petorca": ["La Ligua","Cabildo","Papudo","Petorca","Zapallar"],
-        "Los Andes": ["Los Andes","Calle Larga","Rinconada","San Esteban"],
-        "San Felipe de Aconcagua": ["San Felipe","Catemu","Llay-Llay","Panquehue","Putaendo","Santa María"],
-        "Quillota": ["Quillota","Hijuelas","La Calera","La Cruz","Nogales"],
-        "Isla de Pascua": ["Rapa Nui"],
-
-        # ==== O’Higgins ====
-        "Cachapoal": ["Rancagua","Codegua","Coinco","Coltauco","Doñihue","Graneros","Las Cabras","Machalí","Malloa","Mostazal","Olivar","Peumo","Pichidegua","Quinta de Tilcoco","Rengo","Requínoa","San Vicente de Tagua Tagua"],
-        "Colchagua": ["San Fernando","Chépica","Chimbarongo","Lolol","Nancagua","Palmilla","Peralillo","Placilla","Pumanque","Santa Cruz"],
-        "Cardenal Caro": ["Pichilemu","La Estrella","Litueche","Marchigüe","Navidad","Paredones"],
-
-        # ==== Maule ====
-        "Talca": ["Talca","Constitución","Curepto","Empedrado","Maule","Pelarco","Pencahue","Río Claro","San Clemente","San Rafael"],
-        "Curicó": ["Curicó","Hualañé","Licantén","Molina","Rauco","Romeral","Sagrada Familia","Teno","Vichuquén"],
-        "Linares": ["Linares","Colbún","Longaví","Parral","Retiro","San Javier","Villa Alegre","Yerbas Buenas"],
-        "Cauquenes": ["Cauquenes","Chanco","Pelluhue"],
-
-        # ==== Ñuble ====
-        "Diguillín": ["Bulnes","Chillán","Chillán Viejo","El Carmen","Pemuco","Pinto","Quillón","San Ignacio","Yungay"],
-        "Itata": ["Cobquecura","Coelemu","Ninhue","Portezuelo","Quirihue","Ránquil","Treguaco"],
-        "Punilla": ["Coihueco","Ñiquén","San Carlos","San Fabián","San Nicolás"],
-
-        # ==== Biobío ====
-        "Concepción": ["Concepción","Coronel","Chiguayante","Florida","Hualpén","Hualqui","Lota","Penco","San Pedro de la Paz","Santa Juana","Talcahuano","Tomé"],
-        "Arauco": ["Lebu","Arauco","Cañete","Contulmo","Curanilahue","Los Álamos","Tirúa"],
-        "Biobío": ["Los Ángeles","Antuco","Cabrero","Laja","Mulchén","Nacimiento","Negrete","Quilaco","Quilleco","San Rosendo","Santa Bárbara","Tucapel","Yumbel","Alto Biobío"],
-
-        # ==== Araucanía ====
-        "Cautín": ["Temuco","Carahue","Cholchol","Cunco","Curarrehue","Freire","Galvarino","Gorbea","Lautaro","Loncoche","Melipeuco","Nueva Imperial","Padre Las Casas","Perquenco","Pitrufquén","Pucón","Puerto Saavedra","Teodoro Schmidt","Toltén","Vilcún","Villarrica"],
-        "Malleco": ["Angol","Collipulli","Curacautín","Ercilla","Lonquimay","Los Sauces","Lumaco","Purén","Renaico","Traiguén","Victoria"],
-
-        # ==== Los Ríos ====
-        "Valdivia": ["Valdivia","Corral","Lanco","Los Lagos","Máfil","Mariquina","Paillaco","Panguipulli"],
-        "Ranco": ["La Unión","Futrono","Lago Ranco","Río Bueno"],
-
-        # ==== Los Lagos ====
-        "Llanquihue": ["Puerto Montt","Puerto Varas","Frutillar","Llanquihue","Maullín","Los Muermos","Calbuco","Cochamó","Fresia"],
-        "Chiloé": ["Castro","Ancud","Chonchi","Curaco de Vélez","Dalcahue","Puqueldón","Queilén","Quellón","Quemchi","Quinchao"],
-        "Osorno": ["Osorno","Puerto Octay","Purranque","Puyehue","Río Negro","San Juan de la Costa","San Pablo"],
-        "Palena": ["Chaitén","Futaleufú","Hualaihué","Palena"],
-
-        # ==== Aysén ====
-        "Coyhaique": ["Coyhaique","Lago Verde"],
-        "Aysén": ["Aysén","Cisnes","Guaitecas"],
-        "Capitán Prat": ["Cochrane","O'Higgins","Tortel"],
-        "General Carrera": ["Chile Chico","Río Ibáñez"],
-
-        # ==== Magallanes ====
-        "Magallanes": ["Punta Arenas","Río Verde","San Gregorio","Laguna Blanca"],
-        "Tierra del Fuego": ["Porvenir","Primavera","Timaukel"],
-        "Última Esperanza": ["Natales","Torres del Paine"],
-        "Antártica Chilena": ["Antártica","Cabo de Hornos"],
-
-        # ==== Norte de Chile ====
-        "Arica": ["Arica","Camarones"],
-        "Parinacota": ["Putre","General Lagos"],
-        "Iquique": ["Iquique","Alto Hospicio"],
-        "Tamarugal": ["Pozo Almonte","Camiña","Colchane","Huara","Pica"],
-        "Antofagasta": ["Antofagasta","Mejillones","Sierra Gorda","Taltal"],
-        "El Loa": ["Calama","Ollagüe","San Pedro de Atacama"],
-        "Tocopilla": ["Tocopilla","María Elena"],
-        "Copiapó": ["Copiapó","Caldera","Tierra Amarilla"],
-        "Chañaral": ["Chañaral","Diego de Almagro"],
-        "Huasco": ["Vallenar","Alto del Carmen","Freirina","Huasco"],
-        "Elqui": ["La Serena","Coquimbo","Andacollo","La Higuera","Paihuano","Vicuña"],
-        "Limarí": ["Ovalle","Monte Patria","Combarbalá","Punitaqui","Río Hurtado"],
-        "Choapa": ["Illapel","Canela","Los Vilos","Salamanca"]
+        "Santiago": ["Santiago", "Cerrillos", "Maipú", "La Florida"],
     }
-
     comunas = comunas_por_provincia.get(provincia, [])
     return JsonResponse({'comunas': comunas})
 
 
+# =====================================================
+# REPORTES
+# =====================================================
+
+@login_required(login_url='login')
 def reporte_movimientos(request):
     tipo = request.GET.get("tipo")
     fecha = request.GET.get("fecha")
@@ -359,26 +502,19 @@ def reporte_movimientos(request):
     movimientos = Movimiento.objects.all()
 
     if tipo == "DIARIO" and fecha:
-        movimientos = movimientos.filter(
-            fecha_registro__date=fecha
-        )
-
+        movimientos = movimientos.filter(fecha_registro__date=fecha)
     elif tipo == "MENSUAL" and mes and anio:
         movimientos = movimientos.filter(
             fecha_registro__year=anio,
             fecha_registro__month=mes
         )
-
     elif tipo == "ANUAL" and anio:
-        movimientos = movimientos.filter(
-            fecha_registro__year=anio
-        )
+        movimientos = movimientos.filter(fecha_registro__year=anio)
 
-    # Registrar automáticamente en ReporteMovimiento
     if tipo:
         ReporteMovimiento.objects.create(
             tipo=tipo,
-            generado_por="Administrador del Sistema",
+            generado_por=request.user.username,
             total_movimientos=movimientos.count()
         )
 
@@ -392,6 +528,8 @@ def reporte_movimientos(request):
 
     return render(request, "reporte_resultado.html", context)
 
+
+@login_required(login_url='login')
 def descargar_reporte_pdf(request):
     tipo = request.GET.get("tipo")
     fecha = request.GET.get("fecha")
@@ -401,39 +539,26 @@ def descargar_reporte_pdf(request):
     movimientos = Movimiento.objects.all()
 
     if tipo == "DIARIO" and fecha:
-        movimientos = movimientos.filter(
-            fecha_registro__date=fecha
-        )
-
+        movimientos = movimientos.filter(fecha_registro__date=fecha)
     elif tipo == "MENSUAL" and mes and anio:
         movimientos = movimientos.filter(
             fecha_registro__year=anio,
             fecha_registro__month=mes
         )
-
     elif tipo == "ANUAL" and anio:
-        movimientos = movimientos.filter(
-            fecha_registro__year=anio
-        )
-
-    # ========================
-    # GENERAR PDF
-    # ========================
+        movimientos = movimientos.filter(fecha_registro__year=anio)
 
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename=reporte_movimientos.pdf'
 
     p = canvas.Canvas(response, pagesize=letter)
     width, height = letter
-
     y = height - 50
 
-    # Título
     p.setFont("Helvetica-Bold", 16)
     p.drawString(50, y, f"Reporte de Movimientos - {tipo}")
     y -= 30
 
-    # Filtros aplicados
     p.setFont("Helvetica", 12)
     if tipo == "DIARIO":
         p.drawString(50, y, f"Fecha: {fecha}")
@@ -443,7 +568,6 @@ def descargar_reporte_pdf(request):
         p.drawString(50, y, f"Año: {anio}")
     y -= 30
 
-    # Encabezados de tabla
     p.setFont("Helvetica-Bold", 10)
     p.drawString(40, y, "Código")
     p.drawString(100, y, "Tipo")
@@ -457,11 +581,9 @@ def descargar_reporte_pdf(request):
     p.setFont("Helvetica", 9)
 
     for m in movimientos:
-        if y < 60:  # Nueva página si se llena
+        if y < 60:
             p.showPage()
             y = height - 50
-
-            # Encabezados en nueva página
             p.setFont("Helvetica-Bold", 10)
             p.drawString(40, y, "Código")
             p.drawString(100, y, "Tipo")
@@ -473,7 +595,6 @@ def descargar_reporte_pdf(request):
             y -= 18
             p.setFont("Helvetica", 9)
 
-        # Datos del movimiento
         p.drawString(40, y, str(m.codigo))
         p.drawString(100, y, str(m.tipo))
         p.drawString(160, y, str(m.estado))
@@ -483,7 +604,7 @@ def descargar_reporte_pdf(request):
         p.drawString(470, y, m.destino if m.destino else "")
 
         y -= 15
-        
+
     p.showPage()
     p.save()
     return response

@@ -5,7 +5,15 @@ from App import views
 
 urlpatterns = [
     # ========== PÁGINA INICIAL ==========
-    path('', views.index, name='index'),
+    path('',views.paginaPrincipal, name='pagina_principal'),
+    path('login/', views.login_view, name='login'),
+    
+    # urls.py
+    path('logout/', views.logout_view, name='logout'),  
+    path('cambiar-password/', views.cambiar_password, name='cambiar_password'),
+    path('recuperar-password/', views.recuperar_password, name='recuperar_password'),
+    
+    path('index', views.index, name='index'),
 
     # ========== FARMACIA ==========
     path('farmacias/', views.farmacia_list, name='farmacia_list'),
