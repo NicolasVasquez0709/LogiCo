@@ -18,7 +18,9 @@ from .forms import (
     MovimientoForm, AsignacionMotoForm, AsignacionFarmaciaForm
 )
 
-
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.models import User  # ← Agrega esta línea
 # =====================================================
 # AUTENTICACIÓN
 # =====================================================
@@ -30,6 +32,14 @@ def paginaPrincipal(request):
 
 def es_admin(user):
     return user.is_staff or user.is_superuser
+
+
+@login_required(login_url='login')
+def dashboard_usuario(request):
+    """Dashboard para usuarios normales"""
+    if request.user.is_staff or request.user.is_superuser:
+        return redirect('index')
+    return render(request, 'registrar.html')
 
 
 @require_http_methods(["GET", "POST"])
@@ -598,3 +608,45 @@ def descargar_reporte_pdf(request):
     p.showPage()
     p.save()
     return response
+
+
+ 
+@require_http_methods(["GET", "POST"])
+def registrar_view(request):
+    """Registro de nuevos usuarios (solo usuarios normales)"""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+        
+        # Validaciones
+        if User.objects.filter(username=username).exists():
+            messages.error(request, '❌ Este usuario ya existe.')
+            return redirect('registrar')
+        
+        if User.objects.filter(email=email).exists():
+            messages.error(request, '❌ Este email ya está registrado.')
+            return redirect('registrar')
+        
+        if password1 != password2:
+            messages.error(request, '❌ Las contraseñas no coinciden.')
+            return redirect('registrar')
+        
+        if len(password1) < 8:
+            messages.error(request, '❌ La contraseña debe tener al menos 8 caracteres.')
+            return redirect('registrar')
+        
+        # Crear usuario normal (NO admin)
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password1,
+            is_staff=False,
+            is_superuser=False
+        )
+        
+        messages.success(request, '✅ Registro exitoso. Ya puedes iniciar sesión.')
+        return redirect('login')
+    
+    return render(request, 'registrar.html')
