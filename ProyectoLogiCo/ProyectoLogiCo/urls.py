@@ -5,8 +5,8 @@ from App import views
 
 urlpatterns = [
     # ========== PÁGINA INICIAL ==========
-    path('', views.index, name='index'),
-    path('',views.paginaPrincipal, name='pagina_principal'),
+    
+    path('',views.paginaPrincipal, name='paginaPrincipal'),
     path('login/', views.login_view, name='login'),
     
     # urls.py

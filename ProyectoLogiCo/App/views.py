@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse, HttpResponse
@@ -25,36 +25,32 @@ from .forms import (
 
 def paginaPrincipal(request):
     """Página principal sin autenticación"""
-    if request.user.is_authenticated:
-        return redirect('index')
     return render(request, 'paginaPrincipal.html')
+
+
+def es_admin(user):
+    return user.is_staff or user.is_superuser
 
 
 @require_http_methods(["GET", "POST"])
 def login_view(request):
-    """Login con validación de credenciales"""
     if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-        remember = request.POST.get('remember')
-        
+        username = request.POST['username']
+        password = request.POST['password']
         user = authenticate(request, username=username, password=password)
-        
         if user is not None:
             login(request, user)
-            
-            # Configurar duración de sesión
-            if remember:
-                request.session.set_expiry(timedelta(days=7))
-            else:
-                request.session.set_expiry(timedelta(minutes=30))
-            
-            messages.success(request, f'¡Bienvenido {username}!')
-            return redirect('index')
-        else:
-            messages.error(request, 'Usuario o contraseña incorrectos.')
-    
+            if user.is_staff or user.is_superuser:
+                return redirect('index')
+            return redirect('paginaPrincipal')
     return render(request, 'login.html')
+
+
+@login_required(login_url='login')
+@user_passes_test(es_admin)
+def index(request):
+    """Dashboard principal - solo admin"""
+    return render(request, 'index.html')
 
 
 @login_required(login_url='login')
@@ -63,7 +59,7 @@ def logout_view(request):
     username = request.user.username
     logout(request)
     messages.success(request, f'Sesión cerrada correctamente.')
-    return redirect('pagina_principal')
+    return redirect('paginaPrincipal')
 
 
 @login_required(login_url='login')
@@ -144,7 +140,7 @@ Equipo LogiCo
         except User.DoesNotExist:
             messages.info(request, '📧 Si el email existe, recibirás un enlace de recuperación.')
         
-        return redirect('pagina_principal')
+        return redirect('paginaPrincipal')
     
     return render(request, 'recuperar_password.html')
 
@@ -161,11 +157,11 @@ def reset_password_confirm(request, uidb64, token):
         user = User.objects.get(pk=uid)
     except (TypeError, ValueError, OverflowError, User.DoesNotExist):
         messages.error(request, '❌ El enlace de recuperación es inválido o ha expirado.')
-        return redirect('pagina_principal')
+        return redirect('paginaPrincipal')
     
     if not default_token_generator.check_token(user, token):
         messages.error(request, '❌ El enlace de recuperación ha expirado.')
-        return redirect('pagina_principal')
+        return redirect('paginaPrincipal')
     
     if request.method == 'POST':
         new_password1 = request.POST.get('new_password1')
@@ -185,12 +181,6 @@ def reset_password_confirm(request, uidb64, token):
         return redirect('login')
     
     return render(request, 'reset_password_confirm.html', {'user': user})
-
-
-@login_required(login_url='login')
-def index(request):
-    """Dashboard principal - solo usuarios autenticados"""
-    return render(request, 'index.html')
 
 
 # =====================================================
