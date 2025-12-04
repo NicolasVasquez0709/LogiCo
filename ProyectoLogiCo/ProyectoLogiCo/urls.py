@@ -5,6 +5,7 @@ from App import views
 
 urlpatterns = [
     # ========== PÁGINA INICIAL ==========
+    path('', views.index, name='index'),
     path('',views.paginaPrincipal, name='pagina_principal'),
     path('login/', views.login_view, name='login'),
     
