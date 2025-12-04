@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Generar Reportes</title>
+
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+    h1 {
+        font-size: 2.2em;
+        margin-bottom: 10px;
+        text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+    }
+
+    p {
+        font-size: 1.2em;
+        margin-bottom: 30px;
+        opacity: 0.9;
+    }
+
+    .card {
+        background: white;
+        color: #667eea;
+        padding: 25px 30px;
+        border-radius: 20px;
+        width: 420px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+        text-align: left;
+        margin-top: 10px;
+    }
+
+    label {
+        display: block;
+        font-weight: 600;
+        margin-top: 15px;
+    }
+
+    select, input {
+        width: 100%;
+        padding: 12px;
+        border-radius: 12px;
+        border: 1px solid #ccc;
+        margin-top: 6px;
+        font-size: 1em;
+    }
+
+    button {
+        width: 100%;
+        padding: 15px;
+        margin-top: 25px;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 1em;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    button:hover {
+        background: #764ba2;
+        transform: translateY(-3px);
+        box-shadow: 0 10px 25px rgba(118,75,162,0.35);
+    }
+
+    .volver {
+        margin-top: 25px;
+        display: inline-block;
+        color: white;
+        font-weight: bold;
+        opacity: 0.9;
+        text-decoration: none;
+    }
+
+    .volver:hover {
+        opacity: 1;
+        text-decoration: underline;
+    }
+</style>
+</head>
+
+<body>
+
+<h1>Generar Reportes</h1>
+<p>Seleccione el tipo de reporte que desea generar.</p>
+
+<div class="card">
+    <form action="{% url 'reporte_movimientos' %}" method="get">
+
+        <label>Tipo de reporte:</label>
+        <select name="tipo" id="tipo" required>
+            <option value="">Seleccione...</option>
+            <option value="DIARIO">📅 Diario</option>
+            <option value="MENSUAL">📆 Mensual</option>
+            <option value="ANUAL">📊 Anual</option>
+        </select>
+
+        <div id="fecha_diaria" style="display:none;">
+            <label>Fecha:</label>
+            <input type="date" name="fecha">
+        </div>
+
+        <div id="fecha_mensual" style="display:none;">
+            <label>Mes:</label>
+            <input type="number" name="mes" min="1" max="12">
+
+            <label>Año:</label>
+            <input type="number" name="anio" min="2000" max="2100">
+        </div>
+
+        <div id="fecha_anual" style="display:none;">
+            <label>Año:</label>
+            <input type="number" name="anio" min="2000" max="2100">
+        </div>
+
+        <button type="submit">Generar Reporte</button>
+    </form>
+</div>
+
+<a href="{% url 'index' %}" class="volver">⬅ Volver al inicio</a>
+
+<script>
+document.getElementById("tipo").addEventListener("change", function() {
+    document.getElementById("fecha_diaria").style.display = "none";
+    document.getElementById("fecha_mensual").style.display = "none";
+    document.getElementById("fecha_anual").style.display = "none";
+
+    if (this.value === "DIARIO") document.getElementById("fecha_diaria").style.display = "block";
+    if (this.value === "MENSUAL") document.getElementById("fecha_mensual").style.display = "block";
+    if (this.value === "ANUAL") document.getElementById("fecha_anual").style.display = "block";
+});
+</script>
+
+</body>
+</html>

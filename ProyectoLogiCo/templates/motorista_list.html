@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Listado de Motoristas</title>
+    <style>
+        /* === ESTILOS PRINCIPALES === */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        a {
+            display: inline-block;
+            background: white;
+            color: #667eea;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        a:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            background: #764ba2;
+            color: white;
+        }
+
+        /* === BUSCADOR === */
+        .search-box {
+            max-width: 1200px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            gap: 10px;
+        }
+
+        .search-box input,
+        .search-box select {
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            flex: 1;
+            font-size: 1em;
+        }
+
+        .search-box select {
+            flex: 0.4;
+        }
+
+        table {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border-collapse: collapse;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-size: 1.1em;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f0f0f0;
+            color: #555;
+        }
+
+        tr:hover { background-color: #f8f8ff; }
+
+        td a {
+            padding: 8px 20px;
+            margin: 0 5px;
+            font-size: 0.9em;
+        }
+
+        td a:first-child { background: #667eea; color: white; }
+        td a:first-child:hover { background: #5568d3; }
+
+        td a:last-child { background: #ff6b6b; color: white; }
+        td a:last-child:hover { background: #ff5252; }
+    </style>
+</head>
+<body>
+
+    <h1>Listado de Motoristas</h1>
+
+    <div style="text-align:center;">
+        <a href="{% url 'motorista_create' %}">Agregar Nuevo Motorista</a>
+        <a href="{% url 'index' %}">Volver al Inicio</a>
+    </div>
+
+    <!-- === BARRA DE BÚSQUEDA === -->
+    <div class="search-box">
+        <input type="text" id="buscar" placeholder="Escribe para filtrar...">
+
+        <select id="columna">
+            <option value="0">Nombre</option>
+            <option value="1">RUT</option>
+            <option value="2">Teléfono</option>
+            <option value="3">Correo</option>
+            <option value="4">Licencia</option>
+            <option value="5">Estado</option>
+            <option value="6">Fecha de Ingreso</option>
+        </select>
+    </div>
+
+    <table id="tabla">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>RUT</th>
+                <th>Teléfono</th>
+                <th>Correo</th>
+                <th>Licencia</th>
+                <th>Estado</th>
+                <th>Fecha Ingreso</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for motorista in motoristas %}
+            <tr>
+                <td>{{ motorista.nombre }}</td>
+                <td>{{ motorista.rut }}</td>
+                <td>{{ motorista.telefono }}</td>
+                <td>{{ motorista.correo }}</td>
+                <td>{{ motorista.licencia }}</td>
+                <td>{{ motorista.estado }}</td>
+                <td>{{ motorista.fecha_ingreso }}</td>
+                <td>
+                    <a href="{% url 'motorista_update' motorista.id %}">Editar</a>
+                    <a href="{% url 'motorista_delete' motorista.id %}">Eliminar</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="10" style="text-align:center;">No hay motoristas registrados.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+    <!-- === SCRIPT DE FILTRADO === -->
+    <script>
+        const inputBusqueda = document.getElementById("buscar");
+        const selectColumna = document.getElementById("columna");
+        const tabla = document.getElementById("tabla").getElementsByTagName("tbody")[0];
+
+        inputBusqueda.addEventListener("keyup", filtrarTabla);
+        selectColumna.addEventListener("change", filtrarTabla);
+
+        function filtrarTabla() {
+            const filtro = inputBusqueda.value.toLowerCase();
+            const col = parseInt(selectColumna.value);
+            const filas = tabla.getElementsByTagName("tr");
+
+            for (let i = 0; i < filas.length; i++) {
+                const celda = filas[i].getElementsByTagName("td")[col];
+                if (celda) {
+                    const texto = celda.textContent.toLowerCase();
+                    filas[i].style.display = texto.includes(filtro) ? "" : "none";
+                }
+            }
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Eliminar Movimiento</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: white;
+            text-align: center;
+        }
+        h1 {
+            font-size: 2.8em;
+            margin-bottom: 25px;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+        }
+        p {
+            font-size: 1.3em;
+            margin-bottom: 40px;
+            text-shadow: 1px 1px 4px rgba(0,0,0,0.3);
+        }
+        form button {
+            background: white;
+            color: #ff5252;
+            border: none;
+            border-radius: 12px;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 6px 25px rgba(255,82,82,0.4);
+            transition: background 0.3s;
+            margin-right: 20px;
+        }
+        form button:hover {
+            background: #ff3a3a;
+            color: white;
+        }
+        a.cancel-link {
+            background: white;
+            color: #764ba2;
+            padding: 12px 30px;
+            font-weight: 600;
+            border-radius: 25px;
+            text-decoration: none;
+            box-shadow: 0 4px 18px rgba(118,75,162,0.35);
+            transition: background 0.3s;
+        }
+        a.cancel-link:hover {
+            background: #764ba2;
+            color: white;
+        }
+        .button-group {
+            display: inline-flex;
+            justify-content: center;
+            gap: 10px;
+        }
+         .main-btn {
+    background: linear-gradient(135deg, #ffffff 0%, #764ba2 100%);
+    color: rgb(255, 255, 255);
+    padding: 12px 32px;
+    border: none;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 1.08em;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.13);
+    transition: background 0.2s, color 0.2s, transform 0.18s;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 10px;
+}
+.main-btn:hover, .main-btn:focus {
+    background: #ffffff;
+    color: #fffbe6;
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 8px 24px rgba(255, 255, 255, 0.22);
+}
+    </style>
+</head>
+<body>
+    <h1>¿Eliminar Movimiento?</h1>
+    <p>¿Estás seguro de eliminar el movimiento de tipo <strong>{{ movimiento.tipo_movimiento }}</strong> registrado por <strong>{{ movimiento.motorista }}</strong>?</p>
+    <form method="POST">
+        {% csrf_token %}
+        <div class="button-group">
+            <button type="submit">Eliminar</button>
+            <a href="{% url 'movimiento_list' %}" class="cancel-link">Cancelar</a>
+        </div>
+    </form>
+</body>
+</html>

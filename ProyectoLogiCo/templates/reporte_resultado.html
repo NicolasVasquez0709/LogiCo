@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Resultado del Reporte</title>
+
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        min-height: 100vh;
+        padding: 40px 20px;
+        text-align: center;
+    }
+
+    h1 {
+        font-size: 2.2em;
+        margin-bottom: 10px;
+        text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+    }
+
+    .info {
+        font-size: 1.2em;
+        opacity: 0.9;
+        margin-bottom: 25px;
+    }
+
+    .btn-pdf {
+        display: inline-block;
+        background: white;
+        color: #ff5722;
+        padding: 12px 25px;
+        border-radius: 25px;
+        text-decoration: none;
+        font-weight: bold;
+        margin-bottom: 30px;
+        transition: all .3s ease;
+    }
+    .btn-pdf:hover {
+        background: #ff5722;
+        color: white;
+        transform: translateY(-3px);
+    }
+
+    table {
+        width: 100%;
+        max-width: 1100px;
+        margin: auto;
+        border-collapse: collapse;
+        background: white;
+        color: #333;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    th {
+        background: #667eea;
+        color: white;
+        font-weight: bold;
+        padding: 14px;
+    }
+
+    td {
+        padding: 12px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    tr:hover {
+        background: #f3f6ff;
+    }
+
+    .volver {
+        margin-top: 20px;
+        display: inline-block;
+        color: white;
+        font-weight: bold;
+        opacity: 0.9;
+        text-decoration: none;
+    }
+
+    .volver:hover {
+        opacity: 1;
+        text-decoration: underline;
+    }
+</style>
+
+</head>
+
+<body>
+
+<h1>Reporte de Movimientos</h1>
+
+<div class="info">
+    {% if tipo == "DIARIO" %}
+        Reporte del día: {{ fecha }}
+    {% elif tipo == "MENSUAL" %}
+        Reporte del mes {{ mes }} del año {{ anio }}
+    {% elif tipo == "ANUAL" %}
+        Reporte del año {{ anio }}
+    {% endif %}
+</div>
+
+<a class="btn-pdf" href="{% url 'descargar_reporte_pdf' %}?tipo={{ tipo }}&fecha={{ fecha }}&mes={{ mes }}&anio={{ anio }}">
+    📄 Descargar PDF
+</a>
+
+<table>
+    <thead>
+        <tr>
+            <th>Código</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th>Fecha Registro</th>
+            <th>Motorista</th>
+            <th>Moto</th>
+            <th>Origen</th>
+            <th>Destino</th>
+            <th>Descripción</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for m in movimientos %}
+        <tr>
+            <td>{{ m.codigo }}</td>
+            <td>{{ m.tipo }}</td>
+            <td>{{ m.estado }}</td>
+            <td>{{ m.fecha_registro }}</td>
+
+            <td>{% if m.motorista %}{{ m.motorista.nombre }}{% else %}-{% endif %}</td>
+            <td>{% if m.moto %}{{ m.moto.patente }}{% else %}-{% endif %}</td>
+            <td>{% if m.farmacia_origen %}{{ m.farmacia_origen.nombre }}{% else %}-{% endif %}</td>
+            <td>{% if m.destino %}{{ m.destino }}{% else %}-{% endif %}</td>
+
+            <td>{{ m.descripcion }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="9" style="text-align:center; padding:20px;">No se encontraron movimientos.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'reportes_menu' %}" class="volver">⬅ Volver al menú</a><br>
+<a href="{% url 'index' %}" class="volver">⬅ Volver al inicio</a>
+
+</body>
+</html>

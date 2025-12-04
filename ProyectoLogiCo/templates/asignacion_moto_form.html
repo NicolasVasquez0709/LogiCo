@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Formulario Asignación</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        h1 {
+            color: white;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .form-container {
+            max-width: 400px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 15px;
+              padding: 35px 40px 30px 30px;
+            box-shadow: 0 8px 30px rgba(76, 68, 117, 0.25);
+        }
+        .form-container form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .form-container label {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .form-container input,
+        .form-container select,
+        .form-container textarea {
+            width: 100%;
+            padding: 11px;
+            border: 1px solid #bdbdbd;
+            border-radius: 8px;
+            font-size: 1em;
+            background: #f8f8ff;
+            margin-bottom: 0;
+            transition: border 0.2s;
+        }
+        .form-container input:focus,
+        .form-container select:focus,
+        .form-container textarea:focus {
+            border-color: #764ba2;
+            outline: none;
+        }
+        .form-container button,
+        .form-container input[type="submit"] {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 0;
+            width: 100%;
+            border: none;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 5px;
+            transition: background 0.2s;
+            box-shadow: 0 4px 15px rgba(102,126,234,0.13);
+        }
+        .form-container button:hover,
+        .form-container input[type="submit"]:hover {
+            background: #4e54c8;
+        }
+        .form-container .link {
+            display: block;
+            background: white;
+            color: #667eea;
+            padding: 10px 0;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-top: 5px;
+            box-shadow: 0 2px 12px rgba(102,126,234,0.12);
+            transition: all 0.3s ease;
+        }
+        .form-container .link:hover {
+            background: #bdacce;
+            color: white;
+        }
+        .main-btn {
+    background: linear-gradient(135deg, #ffffff 0%, #764ba2 100%);
+    color: rgb(255, 255, 255);
+    padding: 12px 32px;
+    border: none;
+    border-radius: 25px;
+    font-weight: 700;
+    font-size: 1.08em;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(102,126,234,0.13);
+    transition: background 0.2s, color 0.2s, transform 0.18s;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 10px;
+}
+.main-btn:hover, .main-btn:focus {
+    background: #4e54c8;
+    color: #fffbe6;
+    transform: translateY(-2px) scale(1.04);
+    box-shadow: 0 8px 24px rgba(76, 68, 117, 0.22);
+}
+
+    </style>
+</head>
+<body>
+    <h1>{% if form.instance.pk %}Editar Asignación{% else %}Nueva Asignación{% endif %}</h1>
+    <div class="form-container">
+        <form method="POST">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <input type="submit" value="Guardar">
+        </form>
+        <a href="{% url 'asignacion_moto_list' %}" class="link">Volver al Listado</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Inicio - Sistema LogiCo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px 20px;
+        }
+        h1 {
+            font-size: 2.8em;
+            margin-bottom: 25px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+        }
+        h2 {
+            font-size: 1.6em;
+            font-weight: 400;
+            margin-bottom: 50px;
+            opacity: 0.9;
+        }
+        .menu {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            max-width: 900px;
+        }
+        .menu a {
+            background: white;
+            color: #000;
+            text-decoration: none;
+            padding: 18px 40px;
+            border-radius: 25px;
+            font-weight: 600;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+        }
+        .menu a:hover {
+            background: #764ba2;
+            color: white;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(118,75,162,0.35);
+        }
+        footer {
+            margin-top: 60px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+        
+    </style>
+</head>
+<body>
+    <h1>🚀 Proyecto LogiCo</h1>
+    <h2>Gestión de Farmacias, Motoristas y Movimientos</h2>
+
+    <div class="menu">
+        <a href="{% url 'farmacia_list' %}">🏥 Farmacias</a>
+        <a href="{% url 'moto_list' %}">🏍️ Motos</a>
+        <a href="{% url 'motorista_list' %}">👷‍♂️ Motoristas</a>
+        <a href="{% url 'asignacion_moto_list' %}">🪪 Asignación de Motos</a>
+        <a href="{% url 'asignacion_farmacia_list' %}">🏪 Asignación de Farmacias</a>
+        <a href="{% url 'movimiento_list' %}">📦 Movimientos</a>
+        <a href="{% url 'reportes_menu' %}" class="btn-reportes">📄 Generar Reportes</a>
+    </div>
+</body>
+</html>
