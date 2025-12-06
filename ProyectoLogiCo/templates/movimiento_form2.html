@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Formulario Movimiento</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .form-container {
+            width: 100%;
+            max-width: 480px;
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(14px);
+            border-radius: 22px;
+            padding: 50px 40px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .header-section {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .header-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        h1 {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #cbd5e1;
+            font-size: 0.95em;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #e2e8f0;
+            font-size: 0.95em;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="date"],
+        input[type="number"],
+        input[type="tel"],
+        select,
+        textarea {
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: none;
+            font-size: 0.95em;
+            background: rgba(255,255,255,0.95);
+            color: #000;
+            font-family: 'Inter', sans-serif;
+            transition: 0.3s;
+        }
+
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="date"]:focus,
+        input[type="number"]:focus,
+        input[type="tel"]:focus,
+        select:focus,
+        textarea:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(15, 19, 236, 0.2);
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        input[type="submit"] {
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: 0.3s;
+            border: none;
+            background: linear-gradient(135deg, #0f13ec, #087ed3);
+            color: white;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            margin-top: 10px;
+        }
+
+        input[type="submit"]:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.15);
+        }
+
+        .footer-link {
+            display: block;
+            text-align: center;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.95em;
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid rgba(255,255,255,0.15);
+            transition: 0.3s;
+        }
+
+        .footer-link:hover {
+            color: #0f13ec;
+        }
+
+        /* === ESTILOS PARA DJANGO FORMS === */
+        .errorlist {
+            background: rgba(254, 226, 226, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fecaca;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            list-style: none;
+        }
+
+        .errorlist li {
+            margin: 5px 0;
+        }
+
+        .helptext {
+            color: #94a3b8;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 480px) {
+            .form-container {
+                padding: 35px 25px;
+            }
+
+            h1 {
+                font-size: 1.6em;
+            }
+
+            .header-icon {
+                font-size: 2.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="form-container">
+
+        <div class="header-section">
+            <div class="header-icon">📍</div>
+            <h1>{% if form.instance.pk %}Editar Movimiento{% else %}Registrar Movimiento{% endif %}</h1>
+            <p class="subtitle">{% if form.instance.pk %}Actualiza los datos{% else %}Registra un nuevo movimiento{% endif %}</p>
+        </div>
+
+        <form method="POST" novalidate>
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="errorlist">
+                    {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% for field in form %}
+                <div class="form-group">
+                    {% if field.field.widget.input_type == 'checkbox' %}
+                        <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px;">
+                            {{ field }}
+                            <label for="{{ field.id_for_label }}" style="margin: 0;">{{ field.label }}</label>
+                        </div>
+                    {% else %}
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <small style="color: #fecaca; font-size: 0.85em;">{{ field.errors.0 }}</small>
+                        {% endif %}
+                        {% if field.help_text %}
+                            <small class="helptext">{{ field.help_text|safe }}</small>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <input type="submit" value="💾 Guardar">
+        </form>
+
+        <a href="{% url 'movimiento_list2' %}" class="footer-link">↩️ Volver al Listado</a>
+
+    </div>
+
+</body>
+</html>

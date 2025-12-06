@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.models import User
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse, HttpResponse
@@ -11,16 +12,42 @@ from reportlab.pdfgen import canvas
 
 from .models import (
     Farmacia, Moto, Motorista, Movimiento, 
-    AsignacionMoto, AsignacionFarmacia, ReporteMovimiento
+    AsignacionMoto, AsignacionFarmacia, ReporteMovimiento, UsuarioRol
 )
 from .forms import (
     FarmaciaForm, MotoForm, MotoristaForm, 
     MovimientoForm, AsignacionMotoForm, AsignacionFarmaciaForm
 )
 
-from django.contrib.auth import authenticate, login, logout
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.models import User  # ← Agrega esta línea
+
+# =====================================================
+# DECORADORES PERSONALIZADOS
+# =====================================================
+
+def es_admin(user):
+    """Verifica si el usuario es admin"""
+    try:
+        return user.rol.rol == 'admin'
+    except UsuarioRol.DoesNotExist:
+        return False
+
+
+def es_recepcionista(user):
+    """Verifica si el usuario es recepcionista"""
+    try:
+        return user.rol.rol == 'recepcionista'
+    except UsuarioRol.DoesNotExist:
+        return False
+
+
+def es_admin_o_recepcionista(user):
+    """Verifica si es admin o recepcionista"""
+    try:
+        return user.rol.rol in ['admin', 'recepcionista']
+    except UsuarioRol.DoesNotExist:
+        return False
+
+
 # =====================================================
 # AUTENTICACIÓN
 # =====================================================
@@ -30,45 +57,49 @@ def paginaPrincipal(request):
     return render(request, 'paginaPrincipal.html')
 
 
-def es_admin(user):
-    return user.is_staff or user.is_superuser
-
-
-@login_required(login_url='login')
-def dashboard_usuario(request):
-    """Dashboard para usuarios normales"""
-    if request.user.is_staff or request.user.is_superuser:
-        return redirect('index')
-    return render(request, 'registrar.html')
-
-
 @require_http_methods(["GET", "POST"])
 def login_view(request):
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
         user = authenticate(request, username=username, password=password)
+        
         if user is not None:
             login(request, user)
-            if user.is_staff or user.is_superuser:
-                return redirect('index')
-            return redirect('paginaPrincipal')
+            try:
+                rol = user.rol.rol
+                if rol == 'admin':
+                    return redirect('index')
+                elif rol == 'recepcionista':
+                    return redirect('index2')
+            except UsuarioRol.DoesNotExist:
+                # Si no tiene rol asignado, ir a página principal
+                return redirect('paginaPrincipal')
+        else:
+            messages.error(request, '❌ Usuario o contraseña incorrectos.')
+    
     return render(request, 'login.html')
 
 
 @login_required(login_url='login')
 @user_passes_test(es_admin)
 def index(request):
-    """Dashboard principal - solo admin"""
+    """Dashboard principal - Solo ADMIN"""
     return render(request, 'index.html')
+
+
+@login_required(login_url='login')
+@user_passes_test(es_recepcionista)
+def index2(request):
+    """Dashboard recepcionista - Solo RECEPCIONISTA"""
+    return render(request, 'index2.html')
 
 
 @login_required(login_url='login')
 def logout_view(request):
     """Cerrar sesión"""
-    username = request.user.username
     logout(request)
-    messages.success(request, f'Sesión cerrada correctamente.')
+    messages.success(request, '🚪 Sesión cerrada correctamente.')
     return redirect('paginaPrincipal')
 
 
@@ -84,15 +115,15 @@ def cambiar_password(request):
         user = request.user
         
         if not user.check_password(old_password):
-            messages.error(request, 'La contraseña actual es incorrecta.')
+            messages.error(request, '❌ La contraseña actual es incorrecta.')
             return redirect('index')
         
         if new_password1 != new_password2:
-            messages.error(request, 'Las nuevas contraseñas no coinciden.')
+            messages.error(request, '❌ Las nuevas contraseñas no coinciden.')
             return redirect('index')
         
         if len(new_password1) < 8:
-            messages.error(request, 'La contraseña debe tener al menos 8 caracteres.')
+            messages.error(request, '❌ La contraseña debe tener al menos 8 caracteres.')
             return redirect('index')
         
         user.set_password(new_password1)
@@ -110,7 +141,6 @@ def recuperar_password(request):
     if request.method == 'POST':
         email = request.POST.get('email')
         
-        from django.contrib.auth.models import User
         try:
             user = User.objects.get(email=email)
             
@@ -159,7 +189,6 @@ Equipo LogiCo
 def reset_password_confirm(request, uidb64, token):
     """Confirmar y cambiar contraseña desde enlace de email"""
     from django.contrib.auth.tokens import default_token_generator
-    from django.contrib.auth.models import User
     from django.utils.http import urlsafe_base64_decode
     
     try:
@@ -178,11 +207,11 @@ def reset_password_confirm(request, uidb64, token):
         new_password2 = request.POST.get('new_password2')
         
         if new_password1 != new_password2:
-            messages.error(request, 'Las contraseñas no coinciden.')
+            messages.error(request, '❌ Las contraseñas no coinciden.')
             return redirect(request.path)
         
         if len(new_password1) < 8:
-            messages.error(request, 'La contraseña debe tener al menos 8 caracteres.')
+            messages.error(request, '❌ La contraseña debe tener al menos 8 caracteres.')
             return redirect(request.path)
         
         user.set_password(new_password1)
@@ -193,6 +222,47 @@ def reset_password_confirm(request, uidb64, token):
     return render(request, 'reset_password_confirm.html', {'user': user})
 
 
+@require_http_methods(["GET", "POST"])
+def registrar_view(request):
+    """Registro de nuevos usuarios (solo usuarios normales)"""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password1 = request.POST.get('password1')
+        password2 = request.POST.get('password2')
+        
+        if User.objects.filter(username=username).exists():
+            messages.error(request, '❌ Este usuario ya existe.')
+            return redirect('registrar')
+        
+        if User.objects.filter(email=email).exists():
+            messages.error(request, '❌ Este email ya está registrado.')
+            return redirect('registrar')
+        
+        if password1 != password2:
+            messages.error(request, '❌ Las contraseñas no coinciden.')
+            return redirect('registrar')
+        
+        if len(password1) < 8:
+            messages.error(request, '❌ La contraseña debe tener al menos 8 caracteres.')
+            return redirect('registrar')
+        
+        # Crear usuario normal
+        user = User.objects.create_user(
+            username=username,
+            email=email,
+            password=password1
+        )
+        
+        # Asignar rol de recepcionista por defecto
+        UsuarioRol.objects.create(usuario=user, rol='recepcionista')
+        
+        messages.success(request, '✅ Registro exitoso. Ya puedes iniciar sesión.')
+        return redirect('login')
+    
+    return render(request, 'registrar.html')
+
+
 # =====================================================
 # MENÚ Y REPORTES
 # =====================================================
@@ -201,18 +271,23 @@ def reset_password_confirm(request, uidb64, token):
 def reportes_menu(request):
     return render(request, 'reportes_menu.html')
 
+@login_required(login_url='login')
+def reportes_menu2(request):
+    return render(request, 'reportes_menu2.html')
 
 # =====================================================
-# CRUD FARMACIA
+# CRUD FARMACIA - SOLO ADMIN
 # =====================================================
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def farmacia_list(request):
     farmacias = Farmacia.objects.all()
     return render(request, 'farmacia_list.html', {'farmacias': farmacias})
 
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def farmacia_create(request):
     if request.method == 'POST':
         form = FarmaciaForm(request.POST)
@@ -225,6 +300,7 @@ def farmacia_create(request):
 
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def farmacia_update(request, pk):
     farmacia = get_object_or_404(Farmacia, pk=pk)
     if request.method == 'POST':
@@ -238,6 +314,7 @@ def farmacia_update(request, pk):
 
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def farmacia_delete(request, pk):
     farmacia = get_object_or_404(Farmacia, pk=pk)
     if request.method == 'POST':
@@ -247,16 +324,18 @@ def farmacia_delete(request, pk):
 
 
 # =====================================================
-# CRUD MOTO
+# CRUD MOTO - SOLO ADMIN
 # =====================================================
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def moto_list(request):
     motos = Moto.objects.all()
     return render(request, 'moto_list.html', {'motos': motos})
 
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def moto_create(request):
     if request.method == 'POST':
         form = MotoForm(request.POST)
@@ -269,6 +348,7 @@ def moto_create(request):
 
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def moto_update(request, pk):
     moto = get_object_or_404(Moto, pk=pk)
     if request.method == 'POST':
@@ -282,6 +362,7 @@ def moto_update(request, pk):
 
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def moto_delete(request, pk):
     moto = get_object_or_404(Moto, pk=pk)
     if request.method == 'POST':
@@ -291,16 +372,18 @@ def moto_delete(request, pk):
 
 
 # =====================================================
-# CRUD MOTORISTA
+# CRUD MOTORISTA - SOLO ADMIN
 # =====================================================
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def motorista_list(request):
     motoristas = Motorista.objects.all()
     return render(request, 'motorista_list.html', {'motoristas': motoristas})
 
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def motorista_create(request):
     if request.method == 'POST':
         form = MotoristaForm(request.POST)
@@ -313,6 +396,7 @@ def motorista_create(request):
 
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def motorista_update(request, pk):
     motorista = get_object_or_404(Motorista, pk=pk)
     if request.method == 'POST':
@@ -326,6 +410,7 @@ def motorista_update(request, pk):
 
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def motorista_delete(request, pk):
     motorista = get_object_or_404(Motorista, pk=pk)
     if request.method == 'POST':
@@ -335,16 +420,18 @@ def motorista_delete(request, pk):
 
 
 # =====================================================
-# CRUD ASIGNACIÓN MOTO
+# CRUD ASIGNACIÓN MOTO - SOLO ADMIN
 # =====================================================
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def asignacion_moto_list(request):
     asignaciones = AsignacionMoto.objects.all()
     return render(request, 'asignacion_moto_list.html', {'asignaciones': asignaciones})
 
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def asignacion_moto_create(request):
     if request.method == 'POST':
         form = AsignacionMotoForm(request.POST)
@@ -357,6 +444,7 @@ def asignacion_moto_create(request):
 
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def asignacion_moto_update(request, pk):
     asignacion = get_object_or_404(AsignacionMoto, pk=pk)
     if request.method == 'POST':
@@ -370,6 +458,7 @@ def asignacion_moto_update(request, pk):
 
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def asignacion_moto_delete(request, pk):
     asignacion = get_object_or_404(AsignacionMoto, pk=pk)
     if request.method == 'POST':
@@ -379,16 +468,18 @@ def asignacion_moto_delete(request, pk):
 
 
 # =====================================================
-# CRUD ASIGNACIÓN FARMACIA
+# CRUD ASIGNACIÓN FARMACIA - SOLO ADMIN
 # =====================================================
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def asignacion_farmacia_list(request):
     asignaciones = AsignacionFarmacia.objects.all()
     return render(request, 'asignacion_farmacia_list.html', {'asignaciones': asignaciones})
 
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def asignacion_farmacia_create(request):
     if request.method == 'POST':
         form = AsignacionFarmaciaForm(request.POST)
@@ -401,6 +492,7 @@ def asignacion_farmacia_create(request):
 
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def asignacion_farmacia_update(request, pk):
     asignacion = get_object_or_404(AsignacionFarmacia, pk=pk)
     if request.method == 'POST':
@@ -414,6 +506,7 @@ def asignacion_farmacia_update(request, pk):
 
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def asignacion_farmacia_delete(request, pk):
     asignacion = get_object_or_404(AsignacionFarmacia, pk=pk)
     if request.method == 'POST':
@@ -427,12 +520,22 @@ def asignacion_farmacia_delete(request, pk):
 # =====================================================
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def movimiento_list(request):
     movimientos = Movimiento.objects.all()
     return render(request, 'movimiento_list.html', {'movimientos': movimientos})
 
 
 @login_required(login_url='login')
+@user_passes_test(es_recepcionista)
+def movimiento_list2(request):
+    """Solo recepcionista puede ver este listado"""
+    movimientos = Movimiento.objects.all()
+    return render(request, 'movimiento_list2.html', {'movimientos': movimientos})
+
+
+@login_required(login_url='login')
+@user_passes_test(es_admin)
 def movimiento_create(request):
     if request.method == 'POST':
         form = MovimientoForm(request.POST)
@@ -445,6 +548,20 @@ def movimiento_create(request):
 
 
 @login_required(login_url='login')
+@user_passes_test(es_recepcionista)
+def movimiento_create2(request):
+    if request.method == 'POST':
+        form = MovimientoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('movimiento_list2')
+    else:
+        form = MovimientoForm()
+    return render(request, 'movimiento_form2.html', {'form': form})
+
+
+@login_required(login_url='login')
+@user_passes_test(es_admin)
 def movimiento_update(request, pk):
     movimiento = get_object_or_404(Movimiento, pk=pk)
     if request.method == 'POST':
@@ -458,6 +575,7 @@ def movimiento_update(request, pk):
 
 
 @login_required(login_url='login')
+@user_passes_test(es_admin)
 def movimiento_delete(request, pk):
     movimiento = get_object_or_404(Movimiento, pk=pk)
     if request.method == 'POST':
@@ -609,44 +727,5 @@ def descargar_reporte_pdf(request):
     p.save()
     return response
 
-
- 
-@require_http_methods(["GET", "POST"])
-def registrar_view(request):
-    """Registro de nuevos usuarios (solo usuarios normales)"""
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        email = request.POST.get('email')
-        password1 = request.POST.get('password1')
-        password2 = request.POST.get('password2')
-        
-        # Validaciones
-        if User.objects.filter(username=username).exists():
-            messages.error(request, '❌ Este usuario ya existe.')
-            return redirect('registrar')
-        
-        if User.objects.filter(email=email).exists():
-            messages.error(request, '❌ Este email ya está registrado.')
-            return redirect('registrar')
-        
-        if password1 != password2:
-            messages.error(request, '❌ Las contraseñas no coinciden.')
-            return redirect('registrar')
-        
-        if len(password1) < 8:
-            messages.error(request, '❌ La contraseña debe tener al menos 8 caracteres.')
-            return redirect('registrar')
-        
-        # Crear usuario normal (NO admin)
-        user = User.objects.create_user(
-            username=username,
-            email=email,
-            password=password1,
-            is_staff=False,
-            is_superuser=False
-        )
-        
-        messages.success(request, '✅ Registro exitoso. Ya puedes iniciar sesión.')
-        return redirect('login')
-    
-    return render(request, 'registrar.html')
+def dashboard_usuario(request):
+    return render(request, "dashboard_usuario.html")

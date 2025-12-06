@@ -1,5 +1,54 @@
 from django.db import models
+from django.contrib.auth.models import User
 
+
+def es_admin(user):
+    """Verifica si el usuario es admin"""
+    try:
+        return user.rol.rol == 'admin'
+    except UsuarioRol.DoesNotExist:
+        return False
+
+
+def es_recepcionista(user):
+    """Verifica si el usuario es recepcionista"""
+    try:
+        return user.rol.rol == 'recepcionista'
+    except UsuarioRol.DoesNotExist:
+        return False
+
+
+def es_admin_o_recepcionista(user):
+    """Verifica si es admin o recepcionista"""
+    try:
+        return user.rol.rol in ['admin', 'recepcionista']
+    except UsuarioRol.DoesNotExist:
+        return False
+
+
+# =====================================================
+# AUTENTICACIÓN
+
+class UsuarioRol(models.Model):
+    """Modelo para asignar roles a los usuarios"""
+    
+    ROLES = [
+        ('admin', 'Administrador'),
+        ('recepcionista', 'Recepcionista'),
+    ]
+    
+    usuario = models.OneToOneField(User, on_delete=models.CASCADE, related_name='rol')
+    rol = models.CharField(max_length=20, choices=ROLES, default='recepcionista')
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    activo = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return f"{self.usuario.username} - {self.get_rol_display()}"
+    
+    class Meta:
+        db_table = 'usuario_rol'
+        verbose_name = 'Rol de Usuario'
+        verbose_name_plural = 'Roles de Usuarios'
 
 class Farmacia(models.Model):
     REGIONES = [

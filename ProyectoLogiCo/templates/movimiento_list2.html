@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Listado de Movimientos</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #fff;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            font-weight: 700;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .button-group a {
+            display: inline-block;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: 0.3s;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .button-group a {
+            background: linear-gradient(135deg, #0f13ec, #087ed3);
+            color: white;
+        }
+
+        .button-group a:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.15);
+        }
+
+        /* === BUSCADOR === */
+        .search-box {
+            max-width: 1200px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .search-box input,
+        .search-box select {
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: none;
+            font-size: 0.95em;
+            font-family: 'Inter', sans-serif;
+            background: rgba(255,255,255,0.95);
+            color: #000;
+            transition: 0.3s;
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .search-box select {
+            flex: 0.8;
+            cursor: pointer;
+        }
+
+        .search-box input:focus,
+        .search-box select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(15, 19, 236, 0.2);
+        }
+
+        /* === TABLA === */
+        table {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(14px);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-collapse: collapse;
+        }
+
+        th {
+            background: rgba(15, 19, 236, 0.3);
+            color: #e2e8f0;
+            padding: 15px;
+            text-align: left;
+            font-size: 0.95em;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            color: #cbd5e1;
+            font-size: 0.95em;
+        }
+
+        tr:hover { 
+            background-color: rgba(255,255,255,0.05);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        td a {
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: 0.3s;
+            display: inline-block;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        td a:first-of-type {
+            background: linear-gradient(135deg, #0f13ec, #087ed3);
+            color: white;
+        }
+
+        td a:first-of-type:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.15);
+        }
+
+        td a:last-of-type {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+        }
+
+        td a:last-of-type:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.15);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #cbd5e1;
+        }
+
+        /* === ESTADOS === */
+        .estado-en-proceso { 
+            color: #fbbf24;
+            font-weight: 600;
+            background: rgba(251, 191, 36, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .estado-completado { 
+            color: #4ade80;
+            font-weight: 600;
+            background: rgba(74, 222, 128, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        .estado-anulado { 
+            color: #f87171;
+            font-weight: 600;
+            background: rgba(248, 113, 113, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+            display: inline-block;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .search-box {
+                flex-direction: column;
+            }
+
+            .search-box input,
+            .search-box select {
+                flex: 1;
+            }
+
+            table {
+                font-size: 0.9em;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            td a {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>📍 Listado de Movimientos</h1>
+
+    <div class="button-group">
+        <a href="{% url 'movimiento_create' %}">➕ Registrar Movimiento</a>
+        <a href="{% url 'index2' %}">🏠 Volver al Inicio</a>
+    </div>
+
+    <!-- === BARRA DE BÚSQUEDA === -->
+    <div class="search-box">
+        <input type="text" id="buscar" placeholder="Escribe para filtrar...">
+
+        <select id="columna">
+            <option value="0">Código</option>
+            <option value="1">Tipo</option>
+            <option value="2">Estado</option>
+            <option value="3">Farmacia Origen</option>
+            <option value="4">Destino</option>
+            <option value="5">Motorista</option>
+            <option value="6">Moto</option>
+            <option value="7">Fecha Registro</option>
+            <option value="8">Descripción</option>
+        </select>
+    </div>
+
+    <table id="tabla">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Tipo</th>
+                <th>Estado</th>
+                <th>Farmacia Origen</th>
+                <th>Destino</th>
+                <th>Motorista</th>
+                <th>Moto</th>
+                <th>Fecha Registro</th>
+                <th>Descripción</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for movimiento in movimientos %}
+            <tr>
+                <td>{{ movimiento.codigo }}</td>
+                <td>{{ movimiento.get_tipo_display }}</td>
+                <td>
+                    {% if movimiento.estado == "EN_PROCESO" %}
+                        <span class="estado-en-proceso">En Proceso</span>
+                    {% elif movimiento.estado == "COMPLETADO" %}
+                        <span class="estado-completado">Completado</span>
+                    {% elif movimiento.estado == "ANULADO" %}
+                        <span class="estado-anulado">Anulado</span>
+                    {% endif %}
+                </td>
+                <td>{{ movimiento.farmacia_origen.nombre|default:"-" }}</td>
+                <td>{{ movimiento.destino }}</td>
+                <td>{{ movimiento.motorista.nombre|default:"-" }}</td>
+                <td>{{ movimiento.moto.patente|default:"-" }}</td>
+                <td>{{ movimiento.fecha_registro|date:"d/m/Y H:i" }}</td>
+                <td>{{ movimiento.descripcion|default:"-" }}</td>
+                <td>
+                    <div class="action-buttons">
+                        <a href="{% url 'movimiento_update' movimiento.id %}">✏️ Editar</a>
+                        <a href="{% url 'movimiento_delete' movimiento.id %}">🗑️ Eliminar</a>
+                    </div>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="10" class="empty-state">No hay movimientos registrados.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- === SCRIPT DE FILTRADO === -->
+    <script>
+        const inputBusqueda = document.getElementById("buscar");
+        const selectColumna = document.getElementById("columna");
+        const tabla = document.getElementById("tabla").getElementsByTagName("tbody")[0];
+
+        inputBusqueda.addEventListener("keyup", filtrarTabla);
+        selectColumna.addEventListener("change", filtrarTabla);
+
+        function filtrarTabla() {
+            const filtro = inputBusqueda.value.toLowerCase();
+            const col = parseInt(selectColumna.value);
+            const filas = tabla.getElementsByTagName("tr");
+
+            for (let i = 0; i < filas.length; i++) {
+                const celda = filas[i].getElementsByTagName("td")[col];
+                if (celda) {
+                    const texto = celda.textContent.toLowerCase();
+                    filas[i].style.display = texto.includes(filtro) ? "" : "none";
+                }
+            }
+        }
+    </script>
+
+</body>
+</html>

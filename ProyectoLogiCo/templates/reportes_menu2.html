@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Generar Reportes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        p {
+            font-size: 1.1em;
+            margin-bottom: 40px;
+            text-align: center;
+            color: #cbd5e1;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.06);
+            backdrop-filter: blur(14px);
+            border-radius: 22px;
+            padding: 50px 40px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-weight: 600;
+            color: #e2e8f0;
+            font-size: 0.95em;
+        }
+
+        select,
+        input[type="text"],
+        input[type="email"],
+        input[type="password"],
+        input[type="date"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: none;
+            font-size: 0.95em;
+            background: rgba(255,255,255,0.95);
+            color: #000;
+            font-family: 'Inter', sans-serif;
+            transition: 0.3s;
+        }
+
+        select:focus,
+        input[type="text"]:focus,
+        input[type="email"]:focus,
+        input[type="password"]:focus,
+        input[type="date"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(15, 19, 236, 0.2);
+        }
+
+        select {
+            cursor: pointer;
+        }
+
+        button[type="submit"] {
+            padding: 14px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: 0.3s;
+            border: none;
+            background: linear-gradient(135deg, #0f13ec, #087ed3);
+            color: white;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            margin-top: 10px;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-3px);
+            filter: brightness(1.15);
+        }
+
+        .footer-link {
+            display: block;
+            text-align: center;
+            color: #cbd5e1;
+            text-decoration: none;
+            font-size: 0.95em;
+            margin-top: 30px;
+            transition: 0.3s;
+        }
+
+        .footer-link:hover {
+            color: #0f13ec;
+        }
+
+        .hidden-group {
+            display: none;
+        }
+
+        .hidden-group.active {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                padding: 35px 25px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+            }
+
+            p {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>📊 Generar Reportes</h1>
+        <p>Selecciona el tipo de reporte que deseas generar.</p>
+
+        <div class="card">
+            <form action="{% url 'reporte_movimientos' %}" method="get">
+
+                <div class="form-group">
+                    <label for="tipo">Tipo de reporte:</label>
+                    <select name="tipo" id="tipo" required>
+                        <option value="">Seleccione...</option>
+                        <option value="DIARIO">📅 Diario</option>
+                        <option value="MENSUAL">📆 Mensual</option>
+                        <option value="ANUAL">📊 Anual</option>
+                    </select>
+                </div>
+
+                <div id="fecha_diaria" class="hidden-group">
+                    <div class="form-group">
+                        <label for="fecha_input">Fecha:</label>
+                        <input type="date" id="fecha_input" name="fecha">
+                    </div>
+                </div>
+
+                <div id="fecha_mensual" class="hidden-group">
+                    <div class="form-group">
+                        <label for="mes_input">Mes:</label>
+                        <input type="number" id="mes_input" name="mes" min="1" max="12" placeholder="1-12">
+                    </div>
+                    <div class="form-group">
+                        <label for="anio_mensual">Año:</label>
+                        <input type="number" id="anio_mensual" name="anio" min="2000" max="2100" placeholder="2024">
+                    </div>
+                </div>
+
+                <div id="fecha_anual" class="hidden-group">
+                    <div class="form-group">
+                        <label for="anio_input">Año:</label>
+                        <input type="number" id="anio_input" name="anio" min="2000" max="2100" placeholder="2024">
+                    </div>
+                </div>
+
+                <button type="submit">📈 Generar Reporte</button>
+            </form>
+        </div>
+
+        <a href="{% url 'index2' %}" class="footer-link">🏠 Volver al inicio</a>
+
+    </div>
+
+    <script>
+        document.getElementById("tipo").addEventListener("change", function() {
+            document.getElementById("fecha_diaria").classList.remove("active");
+            document.getElementById("fecha_mensual").classList.remove("active");
+            document.getElementById("fecha_anual").classList.remove("active");
+
+            if (this.value === "DIARIO") document.getElementById("fecha_diaria").classList.add("active");
+            if (this.value === "MENSUAL") document.getElementById("fecha_mensual").classList.add("active");
+            if (this.value === "ANUAL") document.getElementById("fecha_anual").classList.add("active");
+        });
+    </script>
+
+</body>
+</html>
