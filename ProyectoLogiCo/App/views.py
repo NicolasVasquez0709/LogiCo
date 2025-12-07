@@ -518,22 +518,20 @@ def asignacion_farmacia_delete(request, pk):
 
 from django.contrib.auth.decorators import login_required
 
-@login_required
-def movimiento_create(request):
-    # tu código aquí
-    pass
+
+
 # =====================================================
 # CRUD MOVIMIENTO
 # =====================================================
 
-@login_required(login_url='login')
+
 @user_passes_test(es_admin)
 def movimiento_list(request):
     movimientos = Movimiento.objects.all()
     return render(request, 'movimiento_list.html', {'movimientos': movimientos})
 
 
-@login_required(login_url='login')
+
 @user_passes_test(es_recepcionista)
 def movimiento_list2(request):
     """Solo recepcionista puede ver este listado"""
@@ -541,7 +539,7 @@ def movimiento_list2(request):
     return render(request, 'movimiento_list2.html', {'movimientos': movimientos})
 
 
-@login_required(login_url='login')
+
 @user_passes_test(es_admin)
 def movimiento_create(request):
     if request.method == 'POST':
@@ -553,6 +551,16 @@ def movimiento_create(request):
         form = MovimientoForm()
     return render(request, 'movimiento_form.html', {'form': form})
 
+@user_passes_test(es_recepcionista)
+def movimiento_create2(request):
+    if request.method == 'POST':
+        form = MovimientoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('movimiento_list2')
+    else:
+        form = MovimientoForm()
+    return render(request, 'movimiento_form2.html', {'form': form})
 
 
 

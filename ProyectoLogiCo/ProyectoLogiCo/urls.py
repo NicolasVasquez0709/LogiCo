@@ -55,7 +55,7 @@ path('dashboard/', views.dashboard_usuario, name='dashboard_usuario'),
     path('movimientos/', views.movimiento_list, name='movimiento_list'),
     path('movimientos2/', views.movimiento_list2, name='movimiento_list2'),
     path('movimientos/crear/', views.movimiento_create, name='movimiento_create'),
-    path('movimientos/crear/', views.movimiento_create2, name='movimiento_create2'),
+    path('movimientos/crear2/', views.movimiento_create2, name='movimiento_create2'),
     path('movimientos/editar/<int:pk>/', views.movimiento_update, name='movimiento_update'),
     path('movimientos/eliminar/<int:pk>/', views.movimiento_delete, name='movimiento_delete'),
 
