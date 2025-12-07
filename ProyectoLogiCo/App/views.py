@@ -554,6 +554,8 @@ def movimiento_create(request):
     return render(request, 'movimiento_form.html', {'form': form})
 
 
+
+
 @login_required(login_url='login')
 @user_passes_test(es_recepcionista)
 def movimiento_create2(request):
