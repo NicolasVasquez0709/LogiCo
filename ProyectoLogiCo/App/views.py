@@ -515,6 +515,13 @@ def asignacion_farmacia_delete(request, pk):
     return render(request, 'asignacion_farmacia_delete.html', {'asignacion': asignacion})
 
 
+
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def movimiento_create(request):
+    # tu código aquí
+    pass
 # =====================================================
 # CRUD MOVIMIENTO
 # =====================================================

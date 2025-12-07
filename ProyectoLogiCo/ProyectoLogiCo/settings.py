@@ -135,3 +135,4 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Sesión de 30 minutos (1800 segundos)
+LOGIN_URL = 'login'  # Asegúrate que sea exactamente el name de tu URL
