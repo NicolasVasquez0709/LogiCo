@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Código - LogiCo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .recover-container { width: 100%; max-width: 420px; padding: 20px; }
+        .recover-card {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            animation: fadeInUp 0.6s ease;
+        }
+        .recover-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .logo-icon { font-size: 3em; margin-bottom: 15px; display: block; }
+        .recover-header h1 {
+            font-size: 2em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #0f13ec, #087ed3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .recover-header p {
+            color: #94a3b8;
+            font-size: 0.9em;
+            line-height: 1.5;
+        }
+        .messages { margin-bottom: 20px; }
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+        .alert-error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+        }
+        .alert-success {
+            background: rgba(34, 197, 94, 0.15);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            color: #86efac;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            font-weight: 600;
+            color: #e2e8f0;
+            font-size: 0.9em;
+        }
+        .form-group input {
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.15);
+            font-size: 0.95em;
+            background: rgba(255,255,255,0.06);
+            color: white;
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+        .form-group input::placeholder { color: #64748b; }
+        .form-group input:focus {
+            outline: none;
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(15, 19, 236, 0.5);
+            box-shadow: 0 0 0 3px rgba(15, 19, 236, 0.2);
+        }
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 8px;
+            padding: 14px;
+            font-size: 0.85em;
+            color: #93c5fd;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        .recover-btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            background: linear-gradient(135deg, #0f13ec, #087ed3);
+            color: white;
+            font-weight: 600;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(15, 19, 236, 0.3);
+            margin-bottom: 15px;
+        }
+        .recover-btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.15);
+            box-shadow: 0 6px 20px rgba(15, 19, 236, 0.4);
+        }
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: #0f13ec;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95em;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: rgba(15, 19, 236, 0.1);
+            border: 1px solid rgba(15, 19, 236, 0.3);
+            transition: 0.3s;
+            margin-bottom: 20px;
+            width: fit-content;
+        }
+        .back-btn:hover { background: rgba(15, 19, 236, 0.2); }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="recover-container">
+        <div class="recover-card">
+            <a href="{% url 'recuperar_password' %}" class="back-btn">← Volver</a>
+            <div class="recover-header">
+                <span class="logo-icon">✉️</span>
+                <h1>Verificar Código</h1>
+                <p>Ingresa el código de 6 dígitos que recibiste</p>
+            </div>
+
+            {% if messages %}
+                <div class="messages">
+                    {% for message in messages %}
+                        <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="info-box">
+                🔑 Revisa tu email y copia el código. El código expira en 15 minutos.
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="email">Correo Electrónico</label>
+                    <input type="email" id="email" name="email" placeholder="tu@email.com" 
+                           value="{{ email }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="codigo">Código (6 dígitos)</label>
+                    <input type="text" id="codigo" name="codigo" placeholder="ABC123" 
+                           maxlength="6" required style="text-align: center; letter-spacing: 0.2em; font-size: 1.2em;">
+                </div>
+                <button type="submit" class="recover-btn">✓ Verificar Código</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

@@ -42,6 +42,16 @@ CSRF_TRUSTED_ORIGINS = [
     'https://proyecto-integradoev3.onrender.com',
 ]
 
+
+
+# Email
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # O tu proveedor
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'tu_email@gmail.com'
+EMAIL_HOST_PASSWORD = 'tu_contraseña_app'
+DEFAULT_FROM_EMAIL = 'noreply@logico.com'
 # Application definition
 
 INSTALLED_APPS = [
@@ -146,65 +156,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CREAR USUARIOS AUTOMÁTICAMENTE
 # =====================================================
 
-def crear_usuarios_por_defecto():
-    """
-    Crea los usuarios por defecto cuando se inicia Django.
-    Se ejecuta automáticamente al iniciar el servidor.
-    """
-    from django.contrib.auth.models import User
-    from App.models import UsuarioRol
-    
-    usuarios_por_defecto = [
-        {
-            'username': 'root',
-            'email': 'root@logico.com',
-            'password': 'Root123@',
-            'rol': 'admin',
-        },
-        {
-            'username': 'admin',
-            'email': 'admin@logico.com',
-            'password': 'Admin123@',
-            'rol': 'admin',
-        },
-        {
-            'username': 'recepcionista',
-            'email': 'recep@logico.com',
-            'password': 'Recep123@',
-            'rol': 'recepcionista',
-        },
-    ]
-    
-    for datos in usuarios_por_defecto:
-        # Verificar si el usuario ya existe
-        if not User.objects.filter(username=datos['username']).exists():
-            try:
-                # Crear usuario
-                usuario = User.objects.create_user(
-                    username=datos['username'],
-                    email=datos['email'],
-                    password=datos['password']
-                )
-                
-                # Asignar rol
-                UsuarioRol.objects.create(
-                    usuario=usuario,
-                    rol=datos['rol']
-                )
-                
-                print(f"✅ Usuario '{datos['username']}' creado como {datos['rol']}")
-            except Exception as e:
-                print(f"❌ Error al crear usuario {datos['username']}: {e}")
-
-
-# Ejecutar al iniciar Django
-try:
-    crear_usuarios_por_defecto()
-except Exception as e:
-    print(f"⚠️  No se pudieron crear usuarios automáticamente: {e}")
-
-# Sesión de 30 minutos (1800 segundos)
- # Al final del archivo settings.py, cambia esta línea:
 
 # ❌ ANTES:
 LOGIN_URL = 'login'  # Esto apunta a 'login' pero Django busca 'accounts/login/'

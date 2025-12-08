@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.contrib import messages
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse, HttpResponse
+from django.utils import timezone
 from datetime import timedelta
 
 from reportlab.lib.pagesizes import letter
@@ -12,7 +13,8 @@ from reportlab.pdfgen import canvas
 
 from .models import (
     Farmacia, Moto, Motorista, Movimiento, 
-    AsignacionMoto, AsignacionFarmacia, ReporteMovimiento, UsuarioRol
+    AsignacionMoto, AsignacionFarmacia, ReporteMovimiento, UsuarioRol,
+    PasswordRecoveryCode
 )
 from .forms import (
     FarmaciaForm, MotoForm, MotoristaForm, 
@@ -135,59 +137,108 @@ def cambiar_password(request):
     return render(request, 'cambiar_password.html')
 
 
+# =====================================================
+# RECUPERACIÓN DE CONTRASEÑA CON CÓDIGO
+# =====================================================
+
 @require_http_methods(["GET", "POST"])
 def recuperar_password(request):
-    """Enviar email para recuperar contraseña"""
-    if request.method == 'POST':
-        email = request.POST.get('email')
+    """Enviar código de recuperación por email"""
+    if request.method == "POST":
+        email = request.POST.get('email', '').strip()
         
         try:
             user = User.objects.get(email=email)
             
-            from django.contrib.auth.tokens import default_token_generator
-            token = default_token_generator.make_token(user)
+            # Elimina código anterior si existe
+            PasswordRecoveryCode.objects.filter(user=user).delete()
             
-            reset_link = f"{request.build_absolute_uri('/auth/reset-password/')}{user.pk}/{token}/"
+            # Crea nuevo código
+            PasswordRecoveryCode.objects.create(user=user)
             
-            from django.core.mail import send_mail
-            subject = '🔐 Recuperar contraseña - LogiCo'
-            message = f"""
-Hola {user.username},
-
-Recibimos una solicitud para recuperar tu contraseña en LogiCo.
-
-Haz clic en el siguiente enlace para establecer una nueva contraseña:
-{reset_link}
-
-Este enlace expira en 24 horas.
-
-Si no solicitaste esto, ignora este email.
-
-Saludos,
-Equipo LogiCo
-            """
-            
-            send_mail(
-                subject,
-                message,
-                'noreply@logico.com',
-                [email],
-                fail_silently=False,
-            )
-            
-            messages.success(request, '📧 Se envió un enlace de recuperación a tu email.')
-        
+            messages.success(request, f"✔ Código enviado a {email}. Revisa tu bandeja de entrada.")
+            return redirect('verificar_codigo')
         except User.DoesNotExist:
-            messages.info(request, '📧 Si el email existe, recibirás un enlace de recuperación.')
-        
-        return redirect('paginaPrincipal')
+            messages.error(request, "❌ No existe cuenta con ese email.")
     
     return render(request, 'recuperar_password.html')
 
 
 @require_http_methods(["GET", "POST"])
+def verificar_codigo(request):
+    """Verificar código de recuperación"""
+    if request.method == "POST":
+        email = request.POST.get('email', '').strip()
+        codigo = request.POST.get('codigo', '').strip().upper()
+        
+        try:
+            user = User.objects.get(email=email)
+            recovery = PasswordRecoveryCode.objects.get(user=user)
+            
+            if not recovery.is_valid():
+                messages.error(request, "❌ El código ha expirado. Solicita uno nuevo.")
+                return redirect('recuperar_password')
+            
+            if recovery.code != codigo:
+                messages.error(request, "❌ Código incorrecto.")
+                return render(request, 'verificar_codigo.html', {'email': email})
+            
+            # Código válido, redirige a cambiar contraseña
+            request.session['recovery_email'] = email
+            request.session['codigo_verificado'] = True
+            messages.success(request, "✔ Código verificado. Establece tu nueva contraseña.")
+            return redirect('cambiar_password_recuperacion')
+        
+        except User.DoesNotExist:
+            messages.error(request, "❌ Email no encontrado.")
+        except PasswordRecoveryCode.DoesNotExist:
+            messages.error(request, "❌ Solicita un código primero.")
+    
+    return render(request, 'verificar_codigo.html')
+
+
+@require_http_methods(["GET", "POST"])
+def cambiar_password_recuperacion(request):
+    """Cambiar contraseña después de verificar código"""
+    if not request.session.get('codigo_verificado'):
+        messages.error(request, "❌ Debes verificar el código primero.")
+        return redirect('recuperar_password')
+    
+    if request.method == "POST":
+        email = request.session.get('recovery_email')
+        password1 = request.POST.get('password1', '').strip()
+        password2 = request.POST.get('password2', '').strip()
+        
+        if len(password1) < 8:
+            messages.error(request, "❌ La contraseña debe tener al menos 8 caracteres.")
+        elif password1 != password2:
+            messages.error(request, "❌ Las contraseñas no coinciden.")
+        else:
+            try:
+                user = User.objects.get(email=email)
+                user.set_password(password1)
+                user.save()
+                
+                # Marca código como usado
+                recovery = PasswordRecoveryCode.objects.get(user=user)
+                recovery.is_used = True
+                recovery.save()
+                
+                # Limpia sesión
+                del request.session['recovery_email']
+                del request.session['codigo_verificado']
+                
+                messages.success(request, "✔ Contraseña actualizada correctamente. Inicia sesión.")
+                return redirect('login')
+            except User.DoesNotExist:
+                messages.error(request, "❌ Error al actualizar contraseña.")
+    
+    return render(request, 'cambiar_password_recuperacion.html')
+
+
+@require_http_methods(["GET", "POST"])
 def reset_password_confirm(request, uidb64, token):
-    """Confirmar y cambiar contraseña desde enlace de email"""
+    """Confirmar y cambiar contraseña desde enlace de email (LEGACY)"""
     from django.contrib.auth.tokens import default_token_generator
     from django.utils.http import urlsafe_base64_decode
     
@@ -255,7 +306,7 @@ def registrar_view(request):
         )
         
         # Asignar rol de recepcionista por defecto
-        UsuarioRol.objects.create(usuario=user, rol='recepcionista')
+        UsuarioRol.objects.create(user=user, rol='recepcionista')
         
         messages.success(request, '✅ Registro exitoso. Ya puedes iniciar sesión.')
         return redirect('login')
@@ -515,23 +566,18 @@ def asignacion_farmacia_delete(request, pk):
     return render(request, 'asignacion_farmacia_delete.html', {'asignacion': asignacion})
 
 
-
-from django.contrib.auth.decorators import login_required
-
-
-
 # =====================================================
 # CRUD MOVIMIENTO
 # =====================================================
 
-
+@login_required(login_url='login')
 @user_passes_test(es_admin)
 def movimiento_list(request):
     movimientos = Movimiento.objects.all()
     return render(request, 'movimiento_list.html', {'movimientos': movimientos})
 
 
-
+@login_required(login_url='login')
 @user_passes_test(es_recepcionista)
 def movimiento_list2(request):
     """Solo recepcionista puede ver este listado"""
@@ -539,7 +585,7 @@ def movimiento_list2(request):
     return render(request, 'movimiento_list2.html', {'movimientos': movimientos})
 
 
-
+@login_required(login_url='login')
 @user_passes_test(es_admin)
 def movimiento_create(request):
     if request.method == 'POST':
@@ -550,18 +596,6 @@ def movimiento_create(request):
     else:
         form = MovimientoForm()
     return render(request, 'movimiento_form.html', {'form': form})
-
-@user_passes_test(es_recepcionista)
-def movimiento_create2(request):
-    if request.method == 'POST':
-        form = MovimientoForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('movimiento_list2')
-    else:
-        form = MovimientoForm()
-    return render(request, 'movimiento_form2.html', {'form': form})
-
 
 
 @login_required(login_url='login')
@@ -744,5 +778,102 @@ def descargar_reporte_pdf(request):
     p.save()
     return response
 
+
 def dashboard_usuario(request):
     return render(request, "dashboard_usuario.html")
+
+
+
+@require_http_methods(["GET", "POST"])
+def recuperar_password(request):
+    """Enviar código de recuperación por email"""
+    if request.method == "POST":
+        email = request.POST.get('email', '').strip()
+        
+        try:
+            user = User.objects.get(email=email)
+            
+            # Elimina código anterior si existe
+            PasswordRecoveryCode.objects.filter(user=user).delete()
+            
+            # Crea nuevo código
+            PasswordRecoveryCode.objects.create(user=user)
+            
+            messages.success(request, f"✔ Código enviado a {email}. Revisa tu bandeja de entrada.")
+            return redirect('verificar_codigo')
+        except User.DoesNotExist:
+            messages.error(request, "❌ No existe cuenta con ese email.")
+    
+    return render(request, 'recuperar_password.html')
+
+
+@require_http_methods(["GET", "POST"])
+def verificar_codigo(request):
+    """Verificar código de recuperación"""
+    if request.method == "POST":
+        email = request.POST.get('email', '').strip()
+        codigo = request.POST.get('codigo', '').strip().upper()
+        
+        try:
+            user = User.objects.get(email=email)
+            recovery = PasswordRecoveryCode.objects.get(user=user)
+            
+            if not recovery.is_valid():
+                messages.error(request, "❌ El código ha expirado. Solicita uno nuevo.")
+                return redirect('recuperar_password')
+            
+            if recovery.code != codigo:
+                messages.error(request, "❌ Código incorrecto.")
+                return render(request, 'verificar_codigo.html', {'email': email})
+            
+            # Código válido, redirige a cambiar contraseña
+            request.session['recovery_email'] = email
+            request.session['codigo_verificado'] = True
+            messages.success(request, "✔ Código verificado. Establece tu nueva contraseña.")
+            return redirect('cambiar_password_recuperacion')
+        
+        except User.DoesNotExist:
+            messages.error(request, "❌ Email no encontrado.")
+        except PasswordRecoveryCode.DoesNotExist:
+            messages.error(request, "❌ Solicita un código primero.")
+    
+    return render(request, 'verificar_codigo.html')
+
+
+@require_http_methods(["GET", "POST"])
+def cambiar_password_recuperacion(request):
+    """Cambiar contraseña después de verificar código"""
+    if not request.session.get('codigo_verificado'):
+        messages.error(request, "❌ Debes verificar el código primero.")
+        return redirect('recuperar_password')
+    
+    if request.method == "POST":
+        email = request.session.get('recovery_email')
+        password1 = request.POST.get('password1', '').strip()
+        password2 = request.POST.get('password2', '').strip()
+        
+        if len(password1) < 8:
+            messages.error(request, "❌ La contraseña debe tener al menos 8 caracteres.")
+        elif password1 != password2:
+            messages.error(request, "❌ Las contraseñas no coinciden.")
+        else:
+            try:
+                user = User.objects.get(email=email)
+                user.set_password(password1)
+                user.save()
+                
+                # Marca código como usado
+                recovery = PasswordRecoveryCode.objects.get(user=user)
+                recovery.is_used = True
+                recovery.save()
+                
+                # Limpia sesión
+                del request.session['recovery_email']
+                del request.session['codigo_verificado']
+                
+                messages.success(request, "✔ Contraseña actualizada correctamente. Inicia sesión.")
+                return redirect('login')
+            except User.DoesNotExist:
+                messages.error(request, "❌ Error al actualizar contraseña.")
+    
+    return render(request, 'cambiar_password_recuperacion.html')

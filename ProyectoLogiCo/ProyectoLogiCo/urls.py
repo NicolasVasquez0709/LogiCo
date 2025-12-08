@@ -67,6 +67,11 @@ path('dashboard/', views.dashboard_usuario, name='dashboard_usuario'),
     path('reportes/', views.reportes_menu, name='reportes_menu'),
     path('reportes/resultados/', views.reporte_movimientos, name='reporte_movimientos'),
     path('reportes/descargar/pdf/', views.descargar_reporte_pdf, name='descargar_reporte_pdf'),
-
+    path('recuperar-password/', views.recuperar_password, name='recuperar_password'),
+path('verificar-codigo/', views.verificar_codigo, name='verificar_codigo'),
+path('cambiar-password-recuperacion/', views.cambiar_password_recuperacion, name='cambiar_password_recuperacion'),
+ path('recuperar-password/', views.recuperar_password, name='recuperar_password'),
+    path('verificar-codigo/', views.verificar_codigo, name='verificar_codigo'),
+    path('cambiar-password-recuperacion/', views.cambiar_password_recuperacion, name='cambiar_password_recuperacion'),
 ]
 

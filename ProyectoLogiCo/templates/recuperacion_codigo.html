@@ -1,0 +1,162 @@
+<!-- templates/emails/codigo_recuperacion.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Código de Recuperación</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.6;
+            color: #1e293b;
+            background: #f8fafc;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .email-header {
+            background: linear-gradient(135deg, #0f13ec, #087ed3);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        .email-header h1 {
+            margin: 0;
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+        .email-body {
+            padding: 40px 30px;
+        }
+        .greeting {
+            font-size: 1.1em;
+            color: #0f172a;
+            margin-bottom: 20px;
+        }
+        .code-section {
+            background: #f1f5f9;
+            border-left: 4px solid #0f13ec;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .code-label {
+            font-size: 0.9em;
+            color: #64748b;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .code {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #0f13ec;
+            letter-spacing: 0.2em;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+        }
+        .code-expiry {
+            font-size: 0.85em;
+            color: #ef4444;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+        .instructions {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+        .instructions li {
+            margin: 8px 0;
+        }
+        .warning {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 4px solid #ef4444;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            font-size: 0.85em;
+            color: #7f1d1d;
+        }
+        .footer {
+            background: #f8fafc;
+            padding: 20px 30px;
+            font-size: 0.85em;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+        }
+        .footer-link {
+            color: #0f13ec;
+            text-decoration: none;
+        }
+        .divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>🔐 Recuperación de Contraseña</h1>
+        </div>
+
+        <div class="email-body">
+            <p class="greeting">
+                Hola <strong>{{ usuario }}</strong>,
+            </p>
+
+            <p>
+                Recibimos una solicitud para recuperar tu contraseña en <strong>LogiCo</strong>. 
+                Si no fuiste tú, ignora este email.
+            </p>
+
+            <div class="code-section">
+                <div class="code-label">Tu código de recuperación:</div>
+                <div class="code">{{ codigo }}</div>
+                <div class="code-expiry">⏰ Expira en {{ tiempo_expiracion }}</div>
+            </div>
+
+            <div class="instructions">
+                <strong>Cómo usar tu código:</strong>
+                <ol>
+                    <li>Copia el código de 6 dígitos arriba</li>
+                    <li>Ve a la página de verificación</li>
+                    <li>Ingresa tu email y el código</li>
+                    <li>Establece una contraseña nueva</li>
+                </ol>
+            </div>
+
+            <div class="divider"></div>
+
+            <div class="warning">
+                <strong>⚠️ Importante:</strong> Nunca compartas este código con nadie. 
+                LogiCo nunca te pedirá este código por teléfono o chat.
+            </div>
+
+            <p style="margin-top: 20px; color: #64748b;">
+                Si tienes problemas, <a href="mailto:soporte@logico.com" class="footer-link">contacta soporte</a>.
+            </p>
+        </div>
+
+        <div class="footer">
+            <p>
+                © 2024 LogiCo. Todos los derechos reservados.<br>
+                <a href="#" class="footer-link">Política de Privacidad</a> | 
+                <a href="#" class="footer-link">Términos de Servicio</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>

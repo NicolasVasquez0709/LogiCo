@@ -1,5 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.utils import timezone
+from datetime import timedelta
+import secrets
 
 
 def es_admin(user):
@@ -28,6 +31,7 @@ def es_admin_o_recepcionista(user):
 
 # =====================================================
 # AUTENTICACIÓN
+# =====================================================
 
 class UsuarioRol(models.Model):
     """Modelo para asignar roles a los usuarios"""
@@ -49,6 +53,35 @@ class UsuarioRol(models.Model):
         db_table = 'usuario_rol'
         verbose_name = 'Rol de Usuario'
         verbose_name_plural = 'Roles de Usuarios'
+
+
+class PasswordRecoveryCode(models.Model):
+    """Modelo para almacenar códigos de recuperación de contraseña"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='recovery_code')
+    code = models.CharField(max_length=6, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'password_recovery_code'
+        verbose_name = 'Código de Recuperación'
+        verbose_name_plural = 'Códigos de Recuperación'
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = secrets.token_hex(3).upper()  # Genera código de 6 caracteres
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timedelta(minutes=15)  # 15 minutos
+        super().save(*args, **kwargs)
+
+    def is_valid(self):
+        """Verifica si el código es válido (no usado y no expirado)"""
+        return not self.is_used and timezone.now() < self.expires_at
+
+    def __str__(self):
+        return f"Código para {self.user.email}"
+
 
 class Farmacia(models.Model):
     REGIONES = [
