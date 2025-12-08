@@ -1,4 +1,6 @@
 from django.apps import AppConfig
+import django
+django.setup()
 
 
 class AppConfig(AppConfig):
