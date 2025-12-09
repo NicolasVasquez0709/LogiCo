@@ -1,28 +1,32 @@
 from django.contrib import admin
-from django.urls import path, include
-from rest_framework import routers
+from django.urls import path
 from App import views
+from rest_framework import routers
 
-# ========== API REST ROUTER ==========
+
 router = routers.DefaultRouter()
 router.register(r'api_farmacias', views.FarmaciaViewSet, basename='farmacia-api')
 router.register(r'api_motos', views.MotoViewSet, basename='moto-api')
 router.register(r'api_motoristas', views.MotoristaViewSet, basename='motorista-api')
 router.register(r'api_movimientos', views.MovimientoViewSet, basename='movimiento-api')
 
+
+
 urlpatterns = [
-    # ========== INCLUIR ROUTER API ==========
-    path('', include(router.urls)),
-    
     # ========== PÁGINA INICIAL ==========
-    path('', views.paginaPrincipal, name='paginaPrincipal'),
+    
+    path('',views.paginaPrincipal, name='paginaPrincipal'),
     path('login/', views.login_view, name='login'),
     path('registrar/', views.registrar_view, name='registrar'),
-    path('recuperar-password/', views.recuperar_password, name='recuperar_password'),
-    path('reset-password/<uidb64>/<token>/', views.reset_password_confirm, name='reset_password_confirm'),
-    path('dashboard/', views.dashboard_usuario, name='dashboard_usuario'),
+path('recuperar-password/', views.recuperar_password, name='recuperar_password'),
+path('reset-password/<uidb64>/<token>/', views.reset_password_confirm, name='reset_password_confirm'),
+path('dashboard/', views.dashboard_usuario, name='dashboard_usuario'),
+
+
+    # urls.py
     path('logout/', views.logout_view, name='logout'),  
     path('cambiar-password/', views.cambiar_password, name='cambiar_password'),
+    path('recuperar-password/', views.recuperar_password, name='recuperar_password'),
     
     path('index', views.index, name='index'),
     path('index2', views.index2, name='index2'),
@@ -45,13 +49,12 @@ urlpatterns = [
     path('motoristas/editar/<int:pk>/', views.motorista_update, name='motorista_update'),
     path('motoristas/eliminar/<int:pk>/', views.motorista_delete, name='motorista_delete'),
 
-    # ========== ASIGNACIONES MOTO ==========
+    # ========== ASIGNACIONES ==========
     path('asignacion-moto/', views.asignacion_moto_list, name='asignacion_moto_list'),
     path('asignacion-moto/crear/', views.asignacion_moto_create, name='asignacion_moto_create'),
     path('asignacion-moto/editar/<int:pk>/', views.asignacion_moto_update, name='asignacion_moto_update'),
     path('asignacion-moto/eliminar/<int:pk>/', views.asignacion_moto_delete, name='asignacion_moto_delete'),
 
-    # ========== ASIGNACIONES FARMACIA ==========
     path('asignacion-farmacia/', views.asignacion_farmacia_list, name='asignacion_farmacia_list'),
     path('asignacion-farmacia/crear/', views.asignacion_farmacia_create, name='asignacion_farmacia_create'),
     path('asignacion-farmacia/editar/<int:pk>/', views.asignacion_farmacia_update, name='asignacion_farmacia_update'),
@@ -65,17 +68,22 @@ urlpatterns = [
     path('movimientos/editar/<int:pk>/', views.movimiento_update, name='movimiento_update'),
     path('movimientos/eliminar/<int:pk>/', views.movimiento_delete, name='movimiento_delete'),
 
-    # ========== AJAX ==========
+    # ========== AJAX: PROVINCIAS Y COMUNAS ==========
     path('ajax/cargar-provincias/', views.cargar_provincias, name='cargar_provincias'),
     path('ajax/cargar-comunas/', views.cargar_comunas, name='cargar_comunas'),
 
-    # ========== REPORTES ==========
     path('reportes2/', views.reportes_menu2, name='reportes_menu2'),
     path('reportes/', views.reportes_menu, name='reportes_menu'),
     path('reportes/resultados/', views.reporte_movimientos, name='reporte_movimientos'),
     path('reportes/descargar/pdf/', views.descargar_reporte_pdf, name='descargar_reporte_pdf'),
-    
-    # ========== RECUPERACIÓN DE CONTRASEÑA ==========
+    path('recuperar-password/', views.recuperar_password, name='recuperar_password'),
+path('verificar-codigo/', views.verificar_codigo, name='verificar_codigo'),
+path('cambiar-password-recuperacion/', views.cambiar_password_recuperacion, name='cambiar_password_recuperacion'),
+ path('recuperar-password/', views.recuperar_password, name='recuperar_password'),
     path('verificar-codigo/', views.verificar_codigo, name='verificar_codigo'),
     path('cambiar-password-recuperacion/', views.cambiar_password_recuperacion, name='cambiar_password_recuperacion'),
+    path('employee/', views.employeeView, name='employee'),
+
+    
 ]
+

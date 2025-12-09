@@ -367,16 +367,18 @@ def registrar_view(request):
         )
         
         # Asignar rol de recepcionista
-        UsuarioRol.objects.create(user=user, rol='recepcionista')
+        UsuarioRol.objects.create(usuario=user, rol='recepcionista')
         
         # Login automático del usuario
         login(request, user)
         
-        messages.success(request, '✅ Registro exitoso. Bienvenido.')
-        return redirect('index2')  # ← Redirige a index2 en lugar de login
+        # Refresca el usuario en la sesión para que Django reconozca el rol
+        request.user = User.objects.get(pk=user.pk)
+        
+        messages.success(request, '✅ Registro exitoso. ¡Bienvenido a LogiCo!')
+        return redirect('index2')  # Va directo a index2
     
     return render(request, 'registrar.html')
-
 # =====================================================
 # MENÚ Y REPORTES
 # =====================================================
