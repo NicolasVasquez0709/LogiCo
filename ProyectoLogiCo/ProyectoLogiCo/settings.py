@@ -33,6 +33,7 @@ ALLOWED_HOSTS = [
     '127.0.0.1:8000',
     'localhost:8000',
     'proyecto-integradoev3.onrender.com',
+    'logico-l6fu.onrender.com'
 ]
 
 # ← LÍNEA 19-23: CAMBIA ESTO TAMBIÉN
@@ -40,6 +41,7 @@ CSRF_TRUSTED_ORIGINS = [
     'http://127.0.0.1:8000',
     'http://localhost:8000',
     'https://proyecto-integradoev3.onrender.com',
+    'https://logico-l6fu.onrender.com'
 ]
 
 
