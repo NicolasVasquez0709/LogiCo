@@ -46,13 +46,13 @@ CSRF_TRUSTED_ORIGINS = [
 
 # Email
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.gmail.com'  # O tu proveedor
+EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'tu_email@gmail.com'
-EMAIL_HOST_PASSWORD = 'tu_contraseña_app'
-DEFAULT_FROM_EMAIL = 'noreply@logico.com'
-# Application definition
+EMAIL_HOST_USER = 'tu_email@gmail.com'  # Tu email de Gmail
+EMAIL_HOST_PASSWORD = 'tu_contraseña_app'  # Contraseña de aplicación
+DEFAULT_FROM_EMAIL = 'tu_email@gmail.com'
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -61,7 +61,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'App'
+    'App',  # ← AGREGUÉ LA COMA
+    'rest_framework'
 ]
 
 MIDDLEWARE = [

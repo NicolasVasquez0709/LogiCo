@@ -12,7 +12,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 from .models import (
-    Farmacia, Moto, Motorista, Movimiento, 
+    Employee, Farmacia, Moto, Motorista, Movimiento, 
     AsignacionMoto, AsignacionFarmacia, ReporteMovimiento, UsuarioRol,
     PasswordRecoveryCode
 )
@@ -21,10 +21,59 @@ from .forms import (
     MovimientoForm, AsignacionMotoForm, AsignacionFarmaciaForm
 )
 
-
-# =====================================================
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+#=====================================================
 # DECORADORES PERSONALIZADOS
 # =====================================================
+
+
+
+
+
+# =====================================================
+# API REST VIEWSETS
+# =====================================================
+
+from rest_framework import serializers, viewsets
+
+# SERIALIZERS
+class FarmaciaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Farmacia
+        fields = '__all__'
+
+class MotoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Moto
+        fields = '__all__'
+
+class MotoristaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Motorista
+        fields = '__all__'
+
+class MovimientoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Movimiento
+        fields = '__all__'
+
+# VIEWSETS
+class FarmaciaViewSet(viewsets.ModelViewSet):
+    queryset = Farmacia.objects.all()
+    serializer_class = FarmaciaSerializer
+
+class MotoViewSet(viewsets.ModelViewSet):
+    queryset = Moto.objects.all()
+    serializer_class = MotoSerializer
+
+class MotoristaViewSet(viewsets.ModelViewSet):
+    queryset = Motorista.objects.all()
+    serializer_class = MotoristaSerializer
+
+class MovimientoViewSet(viewsets.ModelViewSet):
+    queryset = Movimiento.objects.all()
+    serializer_class = MovimientoSerializer
 
 def es_admin(user):
     """Verifica si el usuario es admin"""
@@ -96,7 +145,6 @@ def index2(request):
     """Dashboard recepcionista - Solo RECEPCIONISTA"""
     return render(request, 'index2.html')
 
-
 @login_required(login_url='login')
 def logout_view(request):
     """Cerrar sesión"""
@@ -141,6 +189,7 @@ def cambiar_password(request):
 # RECUPERACIÓN DE CONTRASEÑA CON CÓDIGO
 # =====================================================
 
+
 @require_http_methods(["GET", "POST"])
 def recuperar_password(request):
     """Enviar código de recuperación por email"""
@@ -150,19 +199,31 @@ def recuperar_password(request):
         try:
             user = User.objects.get(email=email)
             
-            # Elimina código anterior si existe
+            # Elimina código anterior
             PasswordRecoveryCode.objects.filter(user=user).delete()
             
             # Crea nuevo código
-            PasswordRecoveryCode.objects.create(user=user)
+            recovery = PasswordRecoveryCode.objects.create(user=user)
             
-            messages.success(request, f"✔ Código enviado a {email}. Revisa tu bandeja de entrada.")
+            # Envía email simple
+            asunto = "Tu código de recuperación - LogiCo"
+            mensaje = f"Tu código es: {recovery.code}\n\nExpira en 15 minutos."
+            
+            send_mail(
+                asunto,
+                mensaje,
+                settings.DEFAULT_FROM_EMAIL,
+                [email],
+                fail_silently=False,
+            )
+            
+            messages.success(request, f"✔ Código enviado a {email}")
             return redirect('verificar_codigo')
+            
         except User.DoesNotExist:
-            messages.error(request, "❌ No existe cuenta con ese email.")
+            messages.error(request, "❌ Email no encontrado")
     
     return render(request, 'recuperar_password.html')
-
 
 @require_http_methods(["GET", "POST"])
 def verificar_codigo(request):
@@ -275,7 +336,7 @@ def reset_password_confirm(request, uidb64, token):
 
 @require_http_methods(["GET", "POST"])
 def registrar_view(request):
-    """Registro de nuevos usuarios (solo usuarios normales)"""
+    """Registro de nuevos usuarios como recepcionista"""
     if request.method == 'POST':
         username = request.POST.get('username')
         email = request.POST.get('email')
@@ -298,21 +359,23 @@ def registrar_view(request):
             messages.error(request, '❌ La contraseña debe tener al menos 8 caracteres.')
             return redirect('registrar')
         
-        # Crear usuario normal
+        # Crear usuario
         user = User.objects.create_user(
             username=username,
             email=email,
             password=password1
         )
         
-        # Asignar rol de recepcionista por defecto
+        # Asignar rol de recepcionista
         UsuarioRol.objects.create(user=user, rol='recepcionista')
         
-        messages.success(request, '✅ Registro exitoso. Ya puedes iniciar sesión.')
-        return redirect('login')
+        # Login automático del usuario
+        login(request, user)
+        
+        messages.success(request, '✅ Registro exitoso. Bienvenido.')
+        return redirect('index2')  # ← Redirige a index2 en lugar de login
     
     return render(request, 'registrar.html')
-
 
 # =====================================================
 # MENÚ Y REPORTES
@@ -877,3 +940,25 @@ def cambiar_password_recuperacion(request):
                 messages.error(request, "❌ Error al actualizar contraseña.")
     
     return render(request, 'cambiar_password_recuperacion.html')
+
+
+def employeeView(request):
+   empleados = Employee.objects.all()
+   data = {'employees': list(empleados.values('name'))}
+   
+   return JsonResponse(data)
+
+
+@api_view(['GET', 'POST'])
+def student_list(request):
+    if request.method == 'GET':
+        students = Student.objects.all()
+        serializer = StudentSerializer(students, many=True)
+        return Response(serializer.data)
+    
+    elif request.method == 'POST':
+        serializer = StudentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

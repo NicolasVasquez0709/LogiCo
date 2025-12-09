@@ -246,3 +246,31 @@ class ReporteMovimiento(models.Model):
 
     class Meta:
         db_table = 'reporte_movimiento'
+        
+        
+        
+class Employee(models.Model):
+    id = models.AutoField(primary_key=True)
+    imagen = models.ImageField(upload_to='empleados/', null=True, blank=True)
+    name = models.CharField(max_length=100)
+    email = models.EmailField(max_length=100)
+    salary = models.CharField(max_length=50)
+    
+    
+def __str__(self):
+     return str(self.id) + " " + self.name + "($" + str(self.salary) + ")"
+ 
+ 
+ 
+ 
+ 
+class Student(models.Model):
+     id = models.AutoField(primary_key=True)
+     name = models.CharField(max_length=100)
+     email = models.EmailField(max_length=100)
+     course = models.CharField(max_length=100)
+     
+def __str__(self):
+    return str(self.id) + " " + self.name + " (" + self.course + ")"
+
+
